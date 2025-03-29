@@ -34,8 +34,8 @@ def main():
         )
         return
 
-    search = os.environ.get("SEARCH", "None")
-    if search == "None":
+    search = os.environ.get("SEARCH")
+    if search is None:
         logging.error("Please provide a search term.")
         return
     param = search.replace(" ", "%20")
