@@ -1,0 +1,13 @@
+services:
+  scraper:
+    command: python main.py
+    build:
+      context: scraper
+    volumes:
+        - ./output:/app/output
+    environment:
+      - SEARCH=Car
+      - LUMMMI_SCRAPER=false
+      - IMPOSSIBLE_IMAGES_SCRAPER=false
+      - PINTEREST_SCRAPER=true
+      - SCROLL_TIMEOUT=120
