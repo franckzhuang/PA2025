@@ -4,6 +4,7 @@ bs4==0.0.2
 certifi==2025.1.31
 charset-normalizer==3.4.1
 click==8.1.8
+dotenv==0.9.9
 greenlet==3.1.1
 idna==3.10
 mypy-extensions==1.0.0
@@ -12,7 +13,9 @@ pathspec==0.12.1
 platformdirs==4.3.7
 playwright==1.51.0
 pyee==12.1.1
+python-dotenv==1.1.0
 requests==2.32.3
 soupsieve==2.6
+tqdm==4.67.1
 typing_extensions==4.13.0
 urllib3==2.3.0

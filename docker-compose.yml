@@ -4,10 +4,11 @@ services:
     build:
       context: scraper
     volumes:
-        - ./output:/app/output
+        - ./downloads:/app/downloads
     environment:
       - SEARCH=Car
       - LUMMMI_SCRAPER=false
       - IMPOSSIBLE_IMAGES_SCRAPER=false
-      - PINTEREST_SCRAPER=true
-      - SCROLL_TIMEOUT=120
+      - PINTEREST_SCRAPER=false
+      - UNSPLASH_SCRAPER=true
+      - SCROLL_TIMEOUT=30
