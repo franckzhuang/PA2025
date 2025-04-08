@@ -6,9 +6,9 @@ services:
     volumes:
         - ./downloads:/app/downloads
     environment:
-      - SEARCH=Car
+      - SEARCH=architecture
       - LUMMMI_SCRAPER=false
-      - IMPOSSIBLE_IMAGES_SCRAPER=false
-      - PINTEREST_SCRAPER=false
+#      - IMPOSSIBLE_IMAGES_SCRAPER=false
+      - PINTEREST_SCRAPER=true
       - UNSPLASH_SCRAPER=true
       - SCROLL_TIMEOUT=30

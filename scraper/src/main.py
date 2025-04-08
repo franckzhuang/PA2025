@@ -7,7 +7,6 @@ from dotenv import load_dotenv
 from models import (
     PinterestImagesScraper,
     LummiScraper,
-    ImpossibleImagesScraper,
     UnsplashImagesScraper,
 )
 from models import Scraper
@@ -43,14 +42,14 @@ def init_scrapers():
     scraper_classes = [
         (LummiScraper, "LUMMMI_SCRAPER"),
         (PinterestImagesScraper, "PINTEREST_SCRAPER"),
-        (ImpossibleImagesScraper, "IMPOSSIBLE_IMAGES_SCRAPER"),
+        # (ImpossibleImagesScraper, "IMPOSSIBLE_IMAGES_SCRAPER"),
         (UnsplashImagesScraper, "UNSPLASH_SCRAPER"),
     ]
 
     for scraper_class, env_var in scraper_classes:
         try:
             if get_scraper_enabled(env_var):
-                logging.info(f"Initializing scraper: {scraper_class.__name__}")
+                logging.info(f"{scraper_class.__name__}: Initializing scraper")
                 scrapers.append(scraper_class())
             else:
                 logging.info(
