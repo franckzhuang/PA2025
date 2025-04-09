@@ -1,4 +1,4 @@
-FROM python:3.12-bookworm
+FROM mcr.microsoft.com/playwright/python:v1.51.0-noble
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
@@ -15,26 +15,18 @@ RUN apt-get update && \
     libxfixes3 \
     libxrandr2 \
     libgbm1 \
-    libasound2 \
     libpango-1.0-0 \
     libcairo2 \
     && rm -rf /var/lib/apt/lists/*
-
-RUN pip install --no-cache-dir uv
-
-ENV PYTHONUNBUFFERED=1
-ENV UV_PYTHON=/usr/local/bin/python
 
 WORKDIR /app
 
 COPY requirements.txt .
 
-RUN uv pip install -r requirements.txt
+RUN pip install uv
 
-RUN playwright install chromium && \
-    playwright install-deps
+RUN uv pip install --system --no-cache-dir -r requirements.txt
 
 COPY src/ .
-
 
 CMD ["python", "main.py"]
