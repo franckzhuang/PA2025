@@ -6,9 +6,9 @@ services:
     volumes:
         - ./downloads:/app/downloads
     environment:
-      - SEARCH=architecture
+      - SEARCH=realistic natural landscape
       - LUMMMI_SCRAPER=false
 #      - IMPOSSIBLE_IMAGES_SCRAPER=false
       - PINTEREST_SCRAPER=true
       - UNSPLASH_SCRAPER=true
-      - SCROLL_TIMEOUT=30
+      - SCROLL_TIMEOUT=600

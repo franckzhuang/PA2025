@@ -1,12 +1,10 @@
-import math
 import os
-import sys
 import time
 import logging
 
 from playwright.sync_api import sync_playwright
 from bs4 import BeautifulSoup
-from abc import ABC, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod
 from tqdm import tqdm
 
 logging.basicConfig(
@@ -50,8 +48,12 @@ class Scraper(ABC):
             page = context.new_page()
             page.goto(self.build_url(search))
             page.wait_for_timeout(5000)
+
             logging.info(f"{self.__class__.__name__}: Page loaded successfully.")
 
+            button = page.get_by_text("Load more", exact=True)
+            if button.is_visible():
+                button.click()
             urls = []
             start_time = time.time()
             previous_elapsed = 0
@@ -120,56 +122,6 @@ class LummiScraper(Scraper):
 
     def cleanup_links(self, links: list[str]) -> list[str]:
         return [url.split("?")[0] for url in links]
-
-# Temporarily disabled
-# class ImpossibleImagesScraper(Scraper):
-#     @property
-#     def url(self):
-#         return "https://impossibleimages.ai/explore/?search="
-#
-#     @property
-#     def additional_params(self):
-#         return "&impossible=all&sortby=latest"
-#
-#     @property
-#     def img_attr(self):
-#         return {
-#             "name": "figure",
-#             "attrs": {
-#                 "data-preview": True,
-#             },
-#         }
-#
-#     def cleanup_links(self, links: list[str]) -> list[str]:
-#         return [url.rsplit("-", 1)[0] + ".jpg" for url in links]
-#
-#     def get_img_links(self, search: str) -> tuple[list[str], str]:
-#         with sync_playwright() as pw:
-#             browser = pw.chromium.launch(headless=True)
-#             context = browser.new_context()
-#             page = context.new_page()
-#
-#             page.goto(self.build_url(search))
-#             page.wait_for_timeout(5000)
-#             logging.info("Page loaded successfully.")
-#
-#             for _ in range(20):
-#                 page.mouse.wheel(0, 2000)
-#                 page.wait_for_timeout(1000)
-#
-#             html = BeautifulSoup(page.content(), "html.parser")
-#             images = html.find_all("figure", attrs={"data-preview-image": True})
-#             image_urls = [
-#                 img["data-preview-image"]
-#                 for img in images
-#                 if "data-preview-image" in img.attrs
-#             ]
-#             logging.info(f"Found {len(image_urls)} images.")
-#
-#             cleaned_urls = [url.rsplit("-", 1)[0] + ".jpg" for url in image_urls]
-#             browser.close()
-#         return cleaned_urls, "ImpossibleImages"
-
 
 class PinterestImagesScraper(Scraper):
     @property
