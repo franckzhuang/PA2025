@@ -1,17 +1,17 @@
 import os
 import time
 import logging
+from dotenv import load_dotenv
 
 from playwright.sync_api import sync_playwright
 from bs4 import BeautifulSoup
 from abc import ABC, abstractmethod
-from tqdm import tqdm
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
-SCROLL_TIMEOUT = int(os.environ.get("SCROLL_TIMEOUT", 30))
+load_dotenv()
 
 
 class Scraper(ABC):
@@ -25,25 +25,33 @@ class Scraper(ABC):
     def website(self) -> str:
         pass
 
-    @property
-    @abstractmethod
-    def img_attr(self) -> dict:
-        pass
-
     @abstractmethod
     def cleanup_links(self, links: list[str]) -> list[str]:
         pass
 
+    @property
+    def config(self) -> dict:
+        return {
+            "scroll_step": 2000,
+            "scroll_sleep": 1,
+            "timeout": int(os.environ.get("SCROLL_TIMEOUT", 30)),
+            "button_wait": 0,
+            "img_attr": {
+                "name": "img",
+                "attrs": None,
+            },
+        }
 
     def build_url(self, search: str) -> str:
         base_url = self.url
-        additional_params = getattr(self, "additional_params", "")
+        additional_params = self.config.get("additional_params", "")
         return f"{base_url}{search}{additional_params}"
 
 
     def get_img_links(self, search: str) -> tuple[list[str], str]:
+
         with sync_playwright() as pw:
-            browser = pw.chromium.launch(headless=True)
+            browser = pw.chromium.launch(headless=False)
             context = browser.new_context()
             page = context.new_page()
             page.goto(self.build_url(search))
@@ -51,52 +59,45 @@ class Scraper(ABC):
 
             logging.info(f"{self.__class__.__name__}: Page loaded successfully.")
 
-            button = page.get_by_text("Load more", exact=True)
-            if button.is_visible():
-                button.click()
             urls = []
             start_time = time.time()
-            previous_elapsed = 0
 
-            progress_bar = tqdm(
-                total=SCROLL_TIMEOUT,
-                desc=f"{self.__class__.__name__}: Scrolling",
-                ncols=100,
-                unit="sec",
-                dynamic_ncols=True,
-            )
             logging.info(
-                f"{self.__class__.__name__}: Scraping while scrolling for {SCROLL_TIMEOUT} seconds..."
+                f"{self.__class__.__name__}: Scraping while scrolling for {self.config["timeout"]} seconds..."
             )
+
+            btn_text = self.config.get("load_btn", None)
+
             while True:
-                page.evaluate("window.scrollBy(0, 2000)")
-                time.sleep(1)
+                page.evaluate(f"window.scrollBy(0, {self.config["scroll_step"]})")
+                time.sleep(self.config["scroll_sleep"])
+
                 html = BeautifulSoup(page.content(), "html.parser")
 
-                if self.img_attr["attrs"] is not None:
-                    key, value = list(self.img_attr["attrs"].items())[0]
-                    images = html.find_all(self.img_attr["name"], attrs={key: value})
+                if self.config["img_attr"]["attrs"] is not None:
+                    key, value = list(self.config["img_attr"]["attrs"].items())[0]
+                    images = html.find_all(self.config["img_attr"]["name"], attrs={key: value})
                 else:
-                    images = html.find_all(self.img_attr["name"])
+                    images = html.find_all(self.config["img_attr"]["name"])
 
                 image_urls = [img["src"] for img in images if "src" in img.attrs]
-
                 cleaned_urls = self.cleanup_links(image_urls)
                 urls.extend([url for url in cleaned_urls if url not in urls])
 
                 elapsed = time.time() - start_time
-                increment = elapsed - previous_elapsed
-                progress_bar.update(
-                    min(increment, SCROLL_TIMEOUT - progress_bar.n)
-                )
-                previous_elapsed = elapsed
 
-                if elapsed >= SCROLL_TIMEOUT:
-                    progress_bar.close()
-                    logging.info(
-                        f"{self.__class__.__name__}: Timeout reached ({SCROLL_TIMEOUT} seconds), stopping scroll."
-                    )
+                if elapsed >= self.config["timeout"]:
+                    logging.info(f"{self.__class__.__name__}: Timeout reached ({self.config["timeout"]}s).")
                     break
+
+                if btn_text is not None:
+                    button = page.locator(
+                        f"button:has-text('{btn_text}'), a:has-text('{btn_text}')"
+                    )
+                    if button.is_visible():
+                        button.click()
+                        time.sleep(self.config["button_wait"])
+
             browser.close()
         return urls, self.website
 
@@ -105,77 +106,133 @@ class Scraper(ABC):
 class LummiScraper(Scraper):
     @property
     def url(self):
-        return "https://www.lummi.ai/s/photo/"  # can use /illustration instead of /photo
+        return "https://www.lummi.ai/s/photo/"
 
     @property
     def website(self):
         return "Lummi"
 
-    @property
-    def img_attr(self):
-        return {
-            "name": "img",
-            "attrs": {
-                "class": "absolute inset-0 m-auto max-w-full max-h-full",
-            },
-        }
-
     def cleanup_links(self, links: list[str]) -> list[str]:
         return [url.split("?")[0] for url in links]
+
 
 class PinterestImagesScraper(Scraper):
     @property
     def url(self):
         return "https://www.pinterest.com/search/pins/?q="
-    
-    @property
-    def additional_params(self):
-        return "&rs=typed"
 
     @property
     def website(self):
         return "Pinterest"
 
     @property
-    def img_attr(self):
+    def config(self) -> dict:
         return {
-            "name": "img",
-            "attrs": None,
+            "scroll_step": 2000,
+            "scroll_sleep": 1,
+            "timeout": int(os.environ.get("SCROLL_TIMEOUT", 30)),
+            "button_wait": 0,
+            "additional_params": "&rs=typed",
+            "img_attr": {
+                "name": "img",
+                "attrs": None,
+            },
         }
 
     def cleanup_links(self, links: list[str]) -> list[str]:
-        return [
-            url.replace("236x", "originals")
-            for url in links
-            if "60x60" not in url
-        ]
-
+        return [url.replace("236x", "originals") for url in links if "60x60" not in url]
 
 
 class UnsplashImagesScraper(Scraper):
     @property
     def url(self):
         return "https://unsplash.com/s/photos/"
-    
-    @property
-    def additional_params(self):
-        return "?license=free"
 
     @property
     def website(self):
         return "Unsplash"
 
     @property
-    def img_attr(self):
+    def config(self) -> dict:
         return {
-            "name": "img",
-            "attrs": None,
+            "scroll_step": 2000,
+            "scroll_sleep": 1,
+            "timeout": int(os.environ.get("SCROLL_TIMEOUT", 30)),
+            "button_wait": 1,
+            "additional_params": "?license=free",
+            "load_btn": "Load more",
+            "img_attr": {
+                "name": "img",
+                "attrs": None,
+            },
         }
 
     def cleanup_links(self, links: list[str]) -> list[str]:
-        return [
-            url.replace("&q=60&w=3000", "")
-            for url in links
-            if "photo" in url
-        ]
+        return [url.replace("&q=60&w=3000", "") for url in links if "photo" in url]
 
+
+class PexelsImagesScraper(Scraper):
+    @property
+    def url(self):
+        return "https://www.pexels.com/search/"
+
+    @property
+    def website(self):
+        return "Pexels"
+
+    @property
+    def config(self) -> dict:
+        return {
+            "scroll_step": 2000,
+            "scroll_sleep": 1,
+            "timeout": int(os.environ.get("SCROLL_TIMEOUT", 30)),
+            "button_wait": 1,
+            "load_btn": "Load more",
+            "img_attr": {
+                "name": "img",
+                "attrs": None,
+            },
+        }
+
+    def cleanup_links(self, links: list[str]) -> list[str]:
+        return [url.split("?")[0] for url in links if "pexels" in url]
+
+
+class PixabayImagesScraper(Scraper):
+    @property
+    def url(self):
+        return "https://pixabay.com/photos/search/"
+
+    @property
+    def website(self):
+        return "Pexels"
+
+    @property
+    def config(self) -> dict:
+        return {
+            "scroll_step": 6000,
+            "scroll_sleep": 2,
+            "timeout": int(os.environ.get("SCROLL_TIMEOUT", 30)),
+            "button_wait": 2,
+            "load_btn": "Next page",
+            "img_attr": {
+                "name": "img",
+                "attrs": None,
+            },
+        }
+
+    def cleanup_links(self, links: list[str]) -> list[str]:
+        return [url for url in links if not "/static" in url]
+
+
+class StockSnapImagesScraper(Scraper):
+    @property
+    def url(self):
+        return "https://stocksnap.io/search/"
+
+    @property
+    def website(self):
+        return "StockSnap"
+
+    def cleanup_links(self, links: list[str]) -> list[str]:
+        return [url.replace("280h", "960w") for url in links if "stocksnap" in url]
