@@ -23,9 +23,17 @@ class ImageDownloader:
         os.makedirs(dir_path, exist_ok=True)
 
     @staticmethod
-    def download_image(url: str, file_path: str) -> bool:
+    def download_image(url: str, file_path: str, headers: dict = None) -> bool:
         try:
-            response = requests.get(url, timeout=10)
+            headers = headers or {
+                "User-Agent": (
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/124.0.0.0 Safari/537.36"
+                ),
+                "Referer": "https://www.google.com",
+            }
+            response = requests.get(url, timeout=10, headers=headers)
             if response.status_code == 200:
                 with open(file_path, "wb") as f:
                     f.write(response.content)

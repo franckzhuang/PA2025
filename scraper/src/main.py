@@ -5,11 +5,14 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dotenv import load_dotenv
 
 from models import (
+    Scraper,
     PinterestImagesScraper,
     LummiScraper,
     UnsplashImagesScraper,
+    PexelsImagesScraper,
+    PixabayImagesScraper,
+    StockSnapImagesScraper,
 )
-from models import Scraper
 from utils import ImageDownloader
 
 load_dotenv()
@@ -42,8 +45,10 @@ def init_scrapers():
     scraper_classes = [
         (LummiScraper, "LUMMMI_SCRAPER"),
         (PinterestImagesScraper, "PINTEREST_SCRAPER"),
-        # (ImpossibleImagesScraper, "IMPOSSIBLE_IMAGES_SCRAPER"),
         (UnsplashImagesScraper, "UNSPLASH_SCRAPER"),
+        (PexelsImagesScraper, "PEXELS_SCRAPER"),
+        (PixabayImagesScraper, "PIXABAY_SCRAPER"),
+        (StockSnapImagesScraper, "STOCKSNAP_SCRAPER"),
     ]
 
     for scraper_class, env_var in scraper_classes:
