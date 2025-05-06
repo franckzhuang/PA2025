@@ -6,9 +6,11 @@ services:
     volumes:
         - ./downloads:/app/downloads
     environment:
-      - SEARCH=realistic natural landscape
-      - LUMMMI_SCRAPER=false
-#      - IMPOSSIBLE_IMAGES_SCRAPER=false
-      - PINTEREST_SCRAPER=true
-      - UNSPLASH_SCRAPER=true
-      - SCROLL_TIMEOUT=600
+      SEARCH: ${SEARCH}
+      LUMMMI_SCRAPER: ${LUMMMI_SCRAPER}
+      PINTEREST_SCRAPER: ${PINTEREST_SCRAPER}
+      UNSPLASH_SCRAPER: ${UNSPLASH_SCRAPER}
+      PEXELS_SCRAPER: ${PEXELS_SCRAPER}
+      PIXABAY_SCRAPER: ${PIXABAY_SCRAPER}
+      STOCKSNAP_SCRAPER: ${STOCKSNAP_SCRAPER}
+      SCROLL_TIMEOUT: ${SCROLL_TIMEOUT}
