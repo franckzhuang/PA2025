@@ -35,7 +35,7 @@ class Scraper(ABC):
             "scroll_step": 2000,
             "scroll_sleep": 1,
             "timeout": int(os.environ.get("SCROLL_TIMEOUT", 30)),
-            "button_wait": 0,
+            "load_sleep": 0,
             "img_attr": {
                 "name": "img",
                 "attrs": None,
@@ -49,9 +49,8 @@ class Scraper(ABC):
 
 
     def get_img_links(self, search: str) -> tuple[list[str], str]:
-
         with sync_playwright() as pw:
-            browser = pw.chromium.launch(headless=False)
+            browser = pw.chromium.launch(headless=True)
             context = browser.new_context()
             page = context.new_page()
             page.goto(self.build_url(search))
@@ -96,7 +95,7 @@ class Scraper(ABC):
                     )
                     if button.is_visible():
                         button.click()
-                        time.sleep(self.config["button_wait"])
+                        time.sleep(self.config["load_sleep"])
 
             browser.close()
         return urls, self.website
@@ -131,7 +130,7 @@ class PinterestImagesScraper(Scraper):
             "scroll_step": 2000,
             "scroll_sleep": 1,
             "timeout": int(os.environ.get("SCROLL_TIMEOUT", 30)),
-            "button_wait": 0,
+            "load_sleep": 0,
             "additional_params": "&rs=typed",
             "img_attr": {
                 "name": "img",
@@ -158,7 +157,7 @@ class UnsplashImagesScraper(Scraper):
             "scroll_step": 2000,
             "scroll_sleep": 1,
             "timeout": int(os.environ.get("SCROLL_TIMEOUT", 30)),
-            "button_wait": 1,
+            "load_sleep": 1,
             "additional_params": "?license=free",
             "load_btn": "Load more",
             "img_attr": {
@@ -186,7 +185,7 @@ class PexelsImagesScraper(Scraper):
             "scroll_step": 2000,
             "scroll_sleep": 1,
             "timeout": int(os.environ.get("SCROLL_TIMEOUT", 30)),
-            "button_wait": 1,
+            "load_sleep": 1,
             "load_btn": "Load more",
             "img_attr": {
                 "name": "img",
@@ -213,7 +212,7 @@ class PixabayImagesScraper(Scraper):
             "scroll_step": 6000,
             "scroll_sleep": 2,
             "timeout": int(os.environ.get("SCROLL_TIMEOUT", 30)),
-            "button_wait": 2,
+            "load_sleep": 2,
             "load_btn": "Next page",
             "img_attr": {
                 "name": "img",
