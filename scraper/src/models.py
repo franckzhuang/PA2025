@@ -204,7 +204,7 @@ class PixabayImagesScraper(Scraper):
 
     @property
     def website(self):
-        return "Pexels"
+        return "Pixabay"
 
     @property
     def config(self) -> dict:
