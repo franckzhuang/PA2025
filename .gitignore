@@ -303,5 +303,5 @@ debug/
 
 */downloads/*
 */output/*
-
+*/data/*
 # End of https://www.toptal.com/developers/gitignore/api/pycharm,rust,python
