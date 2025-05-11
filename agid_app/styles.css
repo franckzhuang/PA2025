@@ -1,0 +1,33 @@
+.stButton > button {
+  background-color: #4caf50;
+  color: white;
+  font-size: 18px;
+  padding: 0.75rem 2rem;
+  border-radius: 10px;
+  width: 30%;
+}
+.stButton > button:hover {
+  size: 1.05rem;
+}
+.placeholder-box {
+  border: 2px dashed #bbb;
+  background-color: #f9f9f9;
+  height: 500px;
+  width: 500px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  font-size: 18px;
+  color: #888;
+  margin: auto;
+}
+.upload-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+.uploadedFileName {
+  display: none !important;
+}

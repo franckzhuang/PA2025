@@ -4,3 +4,4 @@ pillow==11.2.1
 torch==2.7.0
 tqdm==4.67.1
 transformers==4.51.3
+Flask==3.1.0
