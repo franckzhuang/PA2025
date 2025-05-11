@@ -1,10 +1,11 @@
+use crate::utils::{accuracy, mse};
 use crate::linear_model::LinearModel;
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use approx::assert_abs_diff_eq;
-    use crate::utils::{accuracy, mse};
+
 
     #[test]
     fn test_regression() {
@@ -18,11 +19,11 @@ mod tests {
         let y_data = vec![12.0, 17.0, 22.0, 27.0];
 
         let mut model = LinearModel::new(0.01, 1000, "regression".to_string(), false);
-        model.fit(x_data.clone(), y_data.clone());
+        model.fit(&x_data, &y_data);
 
-        let y_pred = model.predict(x_data.clone());
+        let y_pred = model.predict(&x_data);
 
-        let mse_value = mse(y_pred.clone(), y_data.to_vec());
+        let mse_value = mse(&y_pred, &y_data);
 
         println!("Predictions: {:?}", y_pred.iter().map(|p| (p * 100.0).round() / 100.0).collect::<Vec<f64>>());
         println!("MSE: {:.6}", mse_value);
@@ -41,11 +42,11 @@ mod tests {
         let y_data = vec![1.0, -1.0, 1.0, -1.0];
 
         let mut model = LinearModel::new(0.1, 1000, "classification".to_string(), false);
-        model.fit(x_data.clone(), y_data.clone());
+        model.fit(&x_data, &y_data);
 
-        let y_pred = model.predict(x_data.clone());
+        let y_pred = model.predict(&x_data);
 
-        let acc = accuracy(y_pred.clone(), y_data.to_vec());
+        let acc = accuracy(&y_pred, &y_data);
 
         println!("Predictions: {:?}", y_pred);
         println!("Accuracy: {:.2}%", acc * 100.0);
