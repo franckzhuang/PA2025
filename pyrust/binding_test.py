@@ -5,10 +5,7 @@ if __name__ == "__main__":
 
     try:
         model_reg = mk.LinearModel(
-            learning_rate=0.01,
-            epochs=100,
-            mode="regression",
-            verbose=True
+            learning_rate=0.01, epochs=100, mode="regression", verbose=True
         )
         print("Modèle de régression créé.")
 
@@ -26,10 +23,7 @@ if __name__ == "__main__":
         # ---------------------------------------
 
         model_clf = mk.LinearModel(
-            learning_rate=0.1,
-            epochs=50,
-            mode="classification",
-            verbose=False
+            learning_rate=0.1, epochs=50, mode="classification", verbose=False
         )
         print("\nModèle de classification créé.")
 
@@ -44,9 +38,8 @@ if __name__ == "__main__":
         predictions_clf = model_clf.predict([[-3.0, -3.0], [3.0, 2.0]])
         print(f"Prédictions (classification) pour {test_data_2}: {predictions_clf}")
 
-
     except Exception as e:
         print(f"Une erreur est survenue pendant le test : {e}")
         import traceback
-        traceback.print_exc()
 
+        traceback.print_exc()
