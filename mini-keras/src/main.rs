@@ -1,3 +1,7 @@
+mod linear_model;
+mod tests;
+mod utils;
+
 use rand::Rng;
 
 pub fn random_() -> f64 {
