@@ -11,3 +11,7 @@ rand = "0.9.1"
 [lib]
 name = "mini_keras"
 crate-type = ["cdylib"]
+
+[[bin]]
+name = "mini-keras"
+path = "src/mlp.rs"

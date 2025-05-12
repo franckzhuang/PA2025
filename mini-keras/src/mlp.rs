@@ -5,10 +5,6 @@ pub fn random_() -> f64 {
     rng.gen_range(-1.0..=1.0)
 }
 
-pub enum Prediction {
-    Classification(f64),
-    Regression(Vec<f64>),
-}
 
 pub fn sigmoid(x: f64) -> f64 {
     1.0 / (1.0 + (-x).exp())
@@ -86,7 +82,7 @@ impl MLP {
         }
     }
 
-    pub fn predict(&self, inputs: &[f64]) -> Prediction {
+    pub fn predict(&self, inputs: &[f64]) -> Vec<f64> {
         let mut outputs = inputs.to_vec(); // will hold intermediate results
         for layer in &self.layers {
             outputs = layer.forward(&outputs);
@@ -96,14 +92,15 @@ impl MLP {
 
         if self.is_classification {
             if outputs.len() == 1 {
-                return Prediction::Classification(sigmoid(outputs[0]));
+                return vec![sigmoid(outputs[0])];
             } else {
                 // raise an error
-                panic!("cannot do classification if output size is not 1")
+                // panic!("cannot do classification if output size is not 1")
+                // println!("cannot do classification if output size is not 1");
             }
         }
         // regression
-        Prediction::Regression(outputs)
+        outputs
     }
 
 
@@ -169,7 +166,7 @@ impl MLP {
 
 }
 
-fn test() {
+fn main() {
 
     // RNG test predict
     // println!("{}", random_())
@@ -225,14 +222,12 @@ fn test() {
     let y = vec![1.0, 2.0, 3.0, 4.0, 5.0];
     println!("before training");
     for (input, &target) in X.iter().zip(y.iter()) {
-        let Prediction::Regression(outputs) = mlp.predict(input) else {panic!("unknown error")};
-        println!("{:?}", outputs)
+        println!("{:?}", mlp.predict(input))
     }
     mlp.train(&X, &y, 5000, 0.01);
     println!("after training");
     for (input, &target) in X.iter().zip(y.iter()) {
-        let Prediction::Regression(outputs) = mlp.predict(input) else {panic!("unknown error")};
-        println!("{:?}", outputs)
+        println!("{:?}", mlp.predict(input))
     }
 
     // Classification test
@@ -245,14 +240,12 @@ fn test() {
     let y = vec![0.0, 0.0, 1.0, 1.0];
     println!("before training");
     for (input, &target) in X.iter().zip(y.iter()) {
-        let Prediction::Classification(prob) = mlp.predict(input) else {panic!("unknow error")};
-        println!("{:?}", prob)
+        println!("{:?}", mlp.predict(input))
     }
     mlp.train(&X, &y, 5000, 0.1);
     println!("after training");
     for (input, &target) in X.iter().zip(y.iter()) {
-        let Prediction::Classification(prob) = mlp.predict(input) else {panic!("unknow error")};
-        println!("{:?}", prob)
+        println!("{:?}", mlp.predict(input))
     }
 
 
