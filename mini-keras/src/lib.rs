@@ -39,11 +39,11 @@ impl PyLinearRegression {
         Ok(PyLinearRegression { model: RustLinearRegression::new() })
     }
 
+
     fn fit(&mut self, x_train: Vec<Vec<f64>>, y_train: Vec<f64>) -> PyResult<()> {
         self.model.fit(&x_train, &y_train);
         Ok(())
     }
-
     fn predict(&self, x: Vec<f64>) -> PyResult<f64> {
         Ok(self.model.predict(&x))
     }
@@ -151,15 +151,15 @@ impl PyMLP {
 //         let rust_model =
 //             RustLinearModelGradient::new(learning_rate, epochs, mode, verbose)
 //                 .map_err(|e_str| PyValueError::new_err(e_str))?;
-// 
+//
 //         Ok(PyLinearModelGradient { model: rust_model })
 //     }
-// 
+//
 //     fn fit(&mut self, x_train: Vec<Vec<f64>>, y_train: Vec<f64>) -> PyResult<()> {
 //         self.model.fit(&x_train, &y_train);
 //         Ok(())
 //     }
-// 
+//
 //     fn predict(&self, x: Vec<Vec<f64>>) -> PyResult<Vec<f64>> {
 //         Ok(self.model.predict(&x))
 //     }
