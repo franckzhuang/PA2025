@@ -39,7 +39,7 @@
 # .idea/compiler.xml
 # .idea/jarRepositories.xml
 # .idea/modules.xml
-# .idea/*.iml
+ .idea/*.iml
 # .idea/modules
 # *.iml
 # *.ipr
@@ -85,7 +85,7 @@ fabric.properties
 
 # *.iml
 # modules.xml
-# .idea/misc.xml
+ .idea/misc.xml
 # *.ipr
 
 # Sonarlint plugin
@@ -305,3 +305,4 @@ debug/
 */output/*
 */data/*
 # End of https://www.toptal.com/developers/gitignore/api/pycharm,rust,python
+/.idea/vcs.xml
