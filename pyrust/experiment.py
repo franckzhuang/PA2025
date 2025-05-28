@@ -44,7 +44,7 @@ def run_experiment():
         "ai_images_path": "data/ai",
         "learning_rate": 0.1,
         "epochs": 100,
-        "verbose": False,
+        "verbose": False, 
         "max_predictions_to_show": 100,
     }
 
