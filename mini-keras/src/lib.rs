@@ -4,11 +4,11 @@ use pyo3::prelude::*;
 use pyo3::types::PyModule;
 use pyo3::exceptions::PyValueError;
 
-mod linear_model;
+mod linear_model_gradient;
 mod mlp;
 mod utils;
 
-use crate::linear_model::LinearModel as RustLinearModel;
+use crate::linear_model_gradient::LinearModelGradientDescent as RustLinearModel;
 // use crate::mlp::Prediction as RustPrediction;
 // use crate::mlp::Prediction;
 use crate::mlp::Perceptron as RustPerceptron;
