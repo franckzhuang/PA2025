@@ -84,10 +84,10 @@ class ImageUtils:
     @staticmethod
     def preprocess_image(image_path, target_size):
         try:
-            img = Image.open(image_path).convert("L")
+            img = Image.open(image_path).convert("RGB")
             img = img.resize(target_size)
-            pixel_values = [p / 255.0 for p in list(img.getdata())]
-            return pixel_values
+            pixel_values = list(img.getdata())
+            return [c / 255.0 for pixel in pixel_values for c in pixel]
         except Exception as e:
             print(f"Error while preprocessing image '{image_path}': {e}")
             return None
