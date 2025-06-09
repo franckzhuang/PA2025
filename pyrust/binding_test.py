@@ -260,15 +260,24 @@ def test_5_mlp_reg():
 
 
 def test_1_regression():
-    X = np.array([[1],[2]])
-    Y = np.array([2,3])
+    X = np.array([
+        [1.0, 2.0],
+        [2.0, 3.0],
+        [3.0, 4.0]
+    ])
+    Y = np.array([
+        1.0,
+        2.0,
+        3.0
+    ])
 
-    model = mk.LinearModel(learning_rate=0.01, epochs=200, mode="regression", verbose=False)
-
+    model = mk.LinearRegression()
     model.fit(X, Y)
 
-    test_data = [[1.5], [2.5]]
-    predictions = model.predict(test_data)
+    model.fit(X, Y)
+    model.save("model_regression.json")
+    test_data = [[1.0]]
+    predictions = model.predict(X)
     print(f"Prédictions (régression) pour {test_data}: {predictions}")
 
 def test_2_regression():
@@ -366,7 +375,7 @@ if __name__ == "__main__":
     # test_3_classification()
     # test_4_classification()
 
-    # test_1_regression()
+    test_1_regression()
     # test_2_regression()
     # test_3_regression()
     # test_4_regression()
@@ -376,4 +385,4 @@ if __name__ == "__main__":
     # test_2_mlp_reg()
     # test_3_mlp_reg()
     # test_4_mlp_reg()
-    test_5_mlp_reg()
+    # test_5_mlp_reg()

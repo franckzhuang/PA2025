@@ -5,7 +5,9 @@ edition = "2024"
 
 [dependencies]
 approx = "0.5.1"
-ndarray = "0.15.6"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+ndarray = { version = "0.15.6", features = ["serde"] }
 ndarray-linalg = { version = "0.16.0", features = ["openblas"] }
 numpy = "0.20"
 pyo3 = { version = "0.20", features = ["extension-module"] }
@@ -15,6 +17,6 @@ rand = "0.9.1"
 name = "mini_keras"
 crate-type = ["cdylib"]
 
-[[bin]]
-name = "mini-keras"
-path = "src/mlp.rs"
+#[[bin]]
+#name = "mini-keras"
+#path = "src/mlp.rs"

@@ -4,6 +4,8 @@ use pyo3::prelude::*;
 use pyo3::types::PyModule;
 use pyo3::exceptions::PyValueError;
 use numpy::{PyArray1, PyArray2};
+use std::fs::File;
+use serde::{Deserialize, Serialize};
 
 mod linear_model_gradient;
 mod mlp;
@@ -21,47 +23,59 @@ use crate::mlp::Perceptron as RustPerceptron;
 use crate::mlp::DenseLayer as RustDenseLayer;
 use crate::mlp::MLP as RustMLP;
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[pyclass(name = "LinearRegression")]
-struct PyLinearRegression {
+pub struct PyLinearRegression {
     model: RustLinearRegression,
-}
-
-#[pyclass(name = "LinearClassification")]
-struct PyLinearClassification {
-    model: RustLinearClassification,
-}
-
-#[pyclass(name = "LinearModelGradient")]
-struct PyLinearModelGradient {
-    model: RustLinearModelGradient,
-}
-
-#[pyclass(name = "MLP")]
-struct PyMLP {
-    model: RustMLP,
 }
 
 #[pymethods]
 impl PyLinearRegression {
     #[new]
     fn new() -> PyResult<Self> {
-        let rust_model = RustLinearRegression::new();
-        Ok(PyLinearRegression { model: rust_model })
+        Ok(PyLinearRegression { model: RustLinearRegression::new() })
     }
 
-    fn fit<'py>(&mut self, py: Python<'py>, x_train: &'py PyArray2<f64>, y_train: &'py PyArray1<f64>) -> PyResult<()> {
-        let x = x_train.readonly().as_array().to_owned();
-        let y = y_train.readonly().as_array().to_owned();
-        self.model.fit(&x, &y);
+    fn fit(&mut self, x_train: Vec<Vec<f64>>, y_train: Vec<f64>) -> PyResult<()> {
+        self.model.fit(&x_train, &y_train);
         Ok(())
     }
 
-    fn predict<'py>(&self, py: Python<'py>, x: &'py PyArray2<f64>) -> PyResult<&'py PyArray1<f64>> {
-        let x = x.readonly().as_array().to_owned();
-        let result = self.model.predict(&x);
-        Ok(PyArray1::from_owned_array(py, result))
+    fn predict(&self, x: Vec<f64>) -> PyResult<f64> {
+        Ok(self.model.predict(&x))
     }
 
+    // fn predict_many(&self, x: Vec<Vec<f64>>) -> PyResult<Vec<f64>> {
+    //     Ok(x.iter().map(|sample| self.model.predict(sample)).collect())
+    // }
+
+    fn get_weights(&self) -> PyResult<Vec<f64>> {
+        Ok(self.model.weights.clone().unwrap_or_default())
+    }
+
+    fn get_bias(&self) -> PyResult<f64> {
+        Ok(self.model.bias.unwrap_or(0.0))
+    }
+
+    fn save(&self, path: String) -> PyResult<()> {
+        self.model.save_json(&path)
+            .map_err(|e| pyo3::exceptions::PyIOError::new_err(e.to_string()))
+    }
+
+    #[staticmethod]
+    fn load(path: String) -> PyResult<Self> {
+        let model = RustLinearRegression::load_json(&path)
+            .map_err(|e| pyo3::exceptions::PyIOError::new_err(e.to_string()))?;
+        Ok(PyLinearRegression { model })
+    }
+}
+
+
+
+
+#[pyclass(name = "LinearClassification")]
+struct PyLinearClassification {
+    model: RustLinearClassification,
 }
 
 #[pymethods]
@@ -80,14 +94,20 @@ impl PyLinearClassification {
     fn predict(&self, x: Vec<f64>) -> PyResult<f64> {
         Ok(self.model.predict(&x))
     }
-    
+
     fn get_weights(&self) -> PyResult<Vec<f64>> {
         Ok(self.model.get_weights())
     }
-    
+
     fn get_bias(&self) -> PyResult<f64> {
         Ok(self.model.get_bias())
-    }   
+    }
+}
+
+
+#[pyclass(name = "MLP")]
+struct PyMLP {
+    model: RustMLP,
 }
 
 #[pymethods]
@@ -117,30 +137,37 @@ impl PyMLP {
     }
 }
 
-#[pymethods]
-impl PyLinearModelGradient {
-    #[new]
-    fn new(learning_rate: f64, epochs: usize, mode: String, verbose: bool) -> PyResult<Self> {
-        let rust_model =
-            RustLinearModelGradient::new(learning_rate, epochs, mode, verbose)
-                .map_err(|e_str| PyValueError::new_err(e_str))?;
 
-        Ok(PyLinearModelGradient { model: rust_model })
-    }
 
-    fn fit(&mut self, x_train: Vec<Vec<f64>>, y_train: Vec<f64>) -> PyResult<()> {
-        self.model.fit(&x_train, &y_train);
-        Ok(())
-    }
+// #[pyclass(name = "LinearModelGradient")]
+// struct PyLinearModelGradient {
+//     model: RustLinearModelGradient,
+// }
 
-    fn predict(&self, x: Vec<Vec<f64>>) -> PyResult<Vec<f64>> {
-        Ok(self.model.predict(&x))
-    }
-}
+// #[pymethods]
+// impl PyLinearModelGradient {
+//     #[new]
+//     fn new(learning_rate: f64, epochs: usize, mode: String, verbose: bool) -> PyResult<Self> {
+//         let rust_model =
+//             RustLinearModelGradient::new(learning_rate, epochs, mode, verbose)
+//                 .map_err(|e_str| PyValueError::new_err(e_str))?;
+// 
+//         Ok(PyLinearModelGradient { model: rust_model })
+//     }
+// 
+//     fn fit(&mut self, x_train: Vec<Vec<f64>>, y_train: Vec<f64>) -> PyResult<()> {
+//         self.model.fit(&x_train, &y_train);
+//         Ok(())
+//     }
+// 
+//     fn predict(&self, x: Vec<Vec<f64>>) -> PyResult<Vec<f64>> {
+//         Ok(self.model.predict(&x))
+//     }
+// }
 
 #[pymodule]
 fn mini_keras(_py: Python, m: &PyModule) -> PyResult<()> {
-    m.add_class::<PyLinearModelGradient>()?;
+    // m.add_class::<PyLinearModelGradient>()?;
     m.add_class::<PyMLP>()?;
     m.add_class::<PyLinearRegression>()?;
     m.add_class::<PyLinearClassification>()?;
