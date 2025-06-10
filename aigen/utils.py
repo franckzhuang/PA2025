@@ -71,11 +71,18 @@ def generate_caption(image_path, processor, model):
 # Generate an image from a speech (caption)
 
 
-def generate_image_from_speech(pipe, speech_text, output_path):
+def generate_image_from_speech(pipe, speech_text,img_height,img_width, output_path):
     print(f"Generating image for: '{speech_text}'")
 
+    # Ensure height and width are divisible by 8
+    def round_to_multiple_of_8(x):
+        return (x // 8) * 8
+    
+    sd_height = round_to_multiple_of_8(img_height)
+    sd_width = round_to_multiple_of_8(img_width)
+
     with torch.autocast(device) if device == "cuda" else torch.no_grad():
-        image = pipe(prompt=speech_text, guidance_scale=8.5).images[0]
+        image = pipe(prompt=speech_text,height=sd_height, width=sd_width, guidance_scale=8.5).images[0]
 
     image.save(output_path)
     print(f"Image saved to: {output_path}")

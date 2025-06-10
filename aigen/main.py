@@ -2,8 +2,7 @@ import os
 import torch
 import json
 from utils import load_blip2_model, load_sd_pipeline, generate_caption, generate_image_from_speech
-from tqdm import tqdm
-
+from PIL import Image
 
 def main():
     input_folder = input(
@@ -38,13 +37,13 @@ def main():
     print("\nStarting image generation phase...\n")
     sd_pipe = load_sd_pipeline()
 
-    for idx, (img_name, caption) in enumerate(captions_dict.items(), 1):
+    for idx, (img_name, img_stat) in enumerate(captions_dict.items(), 1):
         output_image_path = os.path.join(
-            output_folder, f"{os.path.splitext(img_name)[0]}.png")
+            output_folder, f"{os.path.splitext(img_name)[0]}.jpg")
         print(f"[{idx}/{len(captions_dict)}] Generating image for: {img_name}")
 
         try:
-            generate_image_from_speech(sd_pipe, caption, output_image_path)
+            generate_image_from_speech(sd_pipe, img_stat['caption'], img_stat['height'], img_stat['width'], output_image_path)
         except Exception as e:
             print(f"Error generating image for {img_name}: {e}")
 
@@ -70,8 +69,11 @@ def generate_captions(input_folder, captions_file):
         print(f"[{idx}/{len(images)}] Processing image: {img_name}")
 
         try:
+            # Get image dimensions
+            with Image.open(img_path) as img:
+                height, width = img.size
             caption = generate_caption(img_path, processor, blip2_model)
-            captions_dict[img_name] = caption
+            captions_dict[img_name] = {'caption' : caption, 'height' : width, 'width' : height}
             print(f"Caption: {caption}")
         except Exception as e:
             print(f"Error processing {img_name}: {e}")
