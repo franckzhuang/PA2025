@@ -151,6 +151,26 @@ impl SVM {
         }
     }
 
+    pub fn weights(&self) -> Option<Vec<f64>> {
+        if let KernelType::Linear = self.kernel {
+            if self.support_vectors.is_empty() {
+                return Some(vec![]);
+            }
+    
+            let mut w = vec![0.0; self.support_vectors[0].len()];
+            for i in 0..self.support_vectors.len() {
+                for j in 0..w.len() {
+                    w[j] += self.alphas[i]
+                        * self.support_labels[i]
+                        * self.support_vectors[i][j];
+                }
+            }
+            Some(w)
+        } else {
+            None
+        }
+    }
+
     pub fn project(&self, x: &Vec<Vec<f64>>) -> Vec<f64> {
         // f(x) = ∑_{j} α_j y_j K(x_j, x) + b
         // Decision score for each point
@@ -171,7 +191,7 @@ impl SVM {
             .iter()
             .map(|&val| if val >= 0.0 { 1 } else { -1 })
             .collect()
-    }
+    }    
 }
 
 fn main() {
