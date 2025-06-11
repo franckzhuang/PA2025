@@ -12,6 +12,7 @@ ndarray-linalg = { version = "0.16.0", features = ["openblas"] }
 numpy = "0.20"
 pyo3 = { version = "0.20", features = ["extension-module"] }
 rand = "0.9.1"
+osqp = "1.0.1"
 
 [lib]
 name = "mini_keras"
