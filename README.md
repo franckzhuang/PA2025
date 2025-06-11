@@ -23,3 +23,9 @@ Take an image as an input and predict wether it is AI generated or not.
 
 - Interface : Faire une page pour générer un modèle entraîné à partir d'un modèle non entrainé et d'un jeu de donnée.
 - Interface : Ajouter la possibilité de choisir différents modèles (ajouter quelque chose de ludique comme le plus utilisé, un modèle meilleur en dessin ou en photo etc ...)
+
+---
+Launch API :
+```bash
+uv run uvicorn pyrust.src.api.main:app --host 0.0.0.0 --port 8000 --reload
+```

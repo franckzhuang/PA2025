@@ -30,7 +30,6 @@ class MongoDB:
         else:
             return f"mongodb://{host}:{port}/"
 
-
     def connect_db(self) -> Database:
         uri = self.get_mongo_uri()
         try:
@@ -43,7 +42,6 @@ class MongoDB:
         database_name = EnvUtils.get_env_var("MONGO_DATABASE", "admin")
         return client[database_name]
 
-
     def connect_gridfs(self) -> GridFS:
         return GridFS(self.db)
 
@@ -54,22 +52,30 @@ class MongoDB:
         filename = os.path.basename(filepath)
 
         if self.fs.exists({"filename": filename, "label": label}):
-            print(f"'{filename}' with label '{label}' already exists, skipping insertion.")
+            print(
+                f"'{filename}' with label '{label}' already exists, skipping insertion."
+            )
             return
 
         try:
-            self.fs.put(data, filename=filename, metadata={
-                "label": label,
-                "source": source,
-                "prompt": prompt,
-                "format": "jpeg",
-                "created_at": datetime.now(ZoneInfo("Europe/Paris"))
-            })
+            self.fs.put(
+                data,
+                filename=filename,
+                metadata={
+                    "label": label,
+                    "source": source,
+                    "prompt": prompt,
+                    "format": "jpeg",
+                    "created_at": datetime.now(ZoneInfo("Europe/Paris")),
+                },
+            )
         except Exception as e:
             print(f"Error inserting {filename}: {e}")
             return
 
-    def insert_batch_from_dir(self, image_dir: str, label: str, source: str, prompt=None):
+    def insert_batch_from_dir(
+        self, image_dir: str, label: str, source: str, prompt=None
+    ):
         captions = None
         if label == "ai":
             with open(f"{image_dir}/captions.json", "r") as f:
@@ -80,7 +86,11 @@ class MongoDB:
                     filepath=path,
                     label=label,
                     source=source,
-                    prompt=captions[os.path.basename(path)]["caption"] if captions else None
+                    prompt=(
+                        captions[os.path.basename(path)]["caption"]
+                        if captions
+                        else None
+                    ),
                 )
             except:
                 print(f"Error processing {path}, skipping.")
@@ -101,11 +111,9 @@ class MongoDB:
         images = []
         for file in files:
             img_data = file.read()
-            images.append({
-                "filename": file.filename,
-                "data": img_data,
-                "metadata": file.metadata
-            })
+            images.append(
+                {"filename": file.filename, "data": img_data, "metadata": file.metadata}
+            )
         return images
 
     # def read(self, filename: str, label: str):

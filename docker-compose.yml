@@ -45,7 +45,9 @@ services:
 #      - mongodb
 
   fiftyone:
-    build: pyrust
+    build:
+      context: pyrust
+      dockerfile: Dockerfile.viewer
     container_name: fiftyone-viewer
     ports:
       - "5151:5151"

@@ -2,14 +2,14 @@ import streamlit as st
 import requests
 import time
 
-API_URL = "http://localhost:8000"
+API_URL = "http://0.0.0.0:8000"
 
 st.title("AI vs Real Landscape - Model Training Dashboard")
 
 st.sidebar.header("Start Training")
 model_type = st.sidebar.selectbox(
     "Classification Model",
-    ["linear", "svm", "mlp", "kmeans", "rbf"]
+    ["linear_classification", "svm", "mlp", "kmeans", "rbf"]
 )
 
 params = {}
@@ -18,7 +18,7 @@ params["max_images_per_class"] = st.sidebar.number_input(
     "Number of samples per class", min_value=2, max_value=10000, value=90, step=1
 )
 
-if model_type == "linear":
+if model_type == "linear_classification":
     params["learning_rate"] = st.sidebar.number_input(
         "Learning Rate", min_value=0.0001, max_value=1.0, value=0.01, step=0.0001, format="%.4f"
     )
@@ -74,7 +74,7 @@ if st.sidebar.button("Start Training"):
 
     with st.spinner("Submitting training job..."):
         try:
-            r = requests.post(f"{API_URL}/train", json=payload)
+            r = requests.post(f"{API_URL}/train/{model_type}", json=payload)
             r.raise_for_status()
             job_id = r.json()["job_id"]
             st.session_state["job_id"] = job_id
@@ -98,7 +98,7 @@ if job_id:
             metrics = data.get("metrics")
             error = data.get("error")
             status_placeholder.write(f"Status: **{status}**")
-            if status == "finished":
+            if status == "success":
                 progress_bar.progress(100)
                 if metrics:
                     st.success("Training completed!")
@@ -116,8 +116,6 @@ if job_id:
     else:
         st.warning("Still waiting... You can refresh or check status again.")
 
-    if st.button("Check Status Again"):
-        st.experimental_rerun()
 else:
     st.info("Start a training job from the sidebar.")
 

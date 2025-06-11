@@ -45,13 +45,13 @@ def run_experiment():
         "learning_rate": 0.01,
     }
 
-    X_images, y_labels, files_name_loaded, len_real, len_ai = DataLoader.load_data(experiment_config)
+    X_images, y_labels, files_name_loaded, len_real, len_ai = DataLoader.load_data(
+        experiment_config
+    )
     total_images_loaded = len(X_images)
 
     if total_images_loaded < 2:
-        print(
-            "Not enough images (less than 2) loaded. Stopping the experiment."
-        )
+        print("Not enough images (less than 2) loaded. Stopping the experiment.")
         Logger.log_experiment_parameters(
             model="LinearClassification",
             config=experiment_config,
@@ -59,7 +59,7 @@ def run_experiment():
             len_ai_images=len_ai,
             total_images=total_images_loaded,
             status=Status.SUCCESS,
-            error_message="Not enough images loaded"
+            error_message="Not enough images loaded",
         )
         return
 
@@ -67,12 +67,14 @@ def run_experiment():
 
     final_accuracy = None
     try:
-        final_accuracy = train_and_evaluate_model(X_images, y_labels, files_name_loaded, experiment_config)
+        final_accuracy = train_and_evaluate_model(
+            X_images, y_labels, files_name_loaded, experiment_config
+        )
     except Exception as e:
         print(f"Error during the experiment : {e}")
     finally:
         Logger.log_experiment_parameters(
-            model="LinearClassification", # Later, change this with the model name
+            model="LinearClassification",  # Later, change this with the model name
             config=experiment_config,
             len_real_images=len_real,
             len_ai_images=len_ai,
@@ -80,7 +82,6 @@ def run_experiment():
             status=Status.SUCCESS,
             final_accuracy=final_accuracy,
         )
-
 
 
 if __name__ == "__main__":
