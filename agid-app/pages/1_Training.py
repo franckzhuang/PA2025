@@ -9,7 +9,7 @@ st.title("AI vs Real Landscape - Model Training Dashboard")
 st.sidebar.header("Start Training")
 model_type = st.sidebar.selectbox(
     "Classification Model",
-    ["linear", "svm", "mlp", "kmeans"]
+    ["linear", "svm", "mlp", "kmeans", "rbf"]
 )
 
 params = {}
@@ -58,6 +58,9 @@ elif model_type == "kmeans":
     params["max_iterations"] = st.sidebar.number_input(
         "Max Iterations", min_value=1, max_value=10000, value=300, step=1
     )
+
+elif model_type == "rbf":
+    pass
 
 if st.sidebar.button("Start Training"):
     payload = {
