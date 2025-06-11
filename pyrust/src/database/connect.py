@@ -9,7 +9,7 @@ from pymongo.database import Database
 from gridfs import GridFS
 from dotenv import load_dotenv
 
-from pyrust.utils import EnvUtils
+from pyrust.src.utils import EnvUtils
 
 load_dotenv()
 

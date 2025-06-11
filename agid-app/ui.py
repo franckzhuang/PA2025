@@ -5,7 +5,7 @@ from io import BytesIO
 
 
 def inject_styles():
-    with open("agid_app/styles.css", "r") as f:
+    with open("agid-app/styles.css", "r") as f:
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
 
@@ -18,7 +18,7 @@ def display_uploaded_image(uploaded_file):
 
     image = Image.open(uploaded_file)
     buffered = BytesIO()
-    image.save(buffered, format="PNG")
+    image.save(buffered, format="JPG")
     img_b64 = base64.b64encode(buffered.getvalue()).decode()
 
     st.markdown(f"""
