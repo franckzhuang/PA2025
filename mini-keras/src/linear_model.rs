@@ -4,6 +4,7 @@ use ndarray_linalg::Inverse;
 use serde::{Serialize, Deserialize};
 use std::fs::File;
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct LinearClassification {
     pub weights: Vec<f64>,
     learning_rate: f64,

@@ -29,11 +29,7 @@ class DataLoader:
                 "label": 1.0,
                 "key": "real",
             },
-            {
-                "path": config["ai_images_path"],
-                "label": -1.0,
-                "key": "ai"
-            },
+            {"path": config["ai_images_path"], "label": -1.0, "key": "ai"},
         ]
         print("Loading images...")
         for source in data_sources_config:

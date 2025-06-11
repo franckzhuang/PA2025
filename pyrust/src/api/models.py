@@ -8,6 +8,7 @@ class ModelType(Enum):
     KMEANS = "KMEANS"
     RBF = "RBF"
 
+
 class Status(Enum):
     SUCCESS = "success"
     FAILURE = "failure"
