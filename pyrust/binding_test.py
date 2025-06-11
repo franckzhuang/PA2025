@@ -375,7 +375,8 @@ if __name__ == "__main__":
     # test_3_classification()
     # test_4_classification()
 
-    test_1_regression()
+
+    # test_1_regression()
     # test_2_regression()
     # test_3_regression()
     # test_4_regression()
@@ -385,4 +386,4 @@ if __name__ == "__main__":
     # test_2_mlp_reg()
     # test_3_mlp_reg()
     # test_4_mlp_reg()
-    # test_5_mlp_reg()
+    test_5_mlp_reg()

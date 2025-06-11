@@ -18,6 +18,6 @@ osqp = "1.0.1"
 name = "mini_keras"
 crate-type = ["cdylib"]
 
-#[[bin]]
-#name = "mini-keras"
-#path = "src/mlp.rs"
+[[bin]]
+name = "mini-keras"
+path = "src/mlp.rs"

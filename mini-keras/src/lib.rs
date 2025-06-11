@@ -113,6 +113,38 @@ struct PyMLP {
     model: RustMLP,
 }
 
+#[pyclass(name = "MLP")]
+struct PyMLP {
+    model: RustMLP,
+}
+
+#[pymethods]
+impl PyMLP {
+
+    #[new]
+    fn new(layers: Vec<usize>, is_classification:bool) ->PyResult<Self> {
+        let mut dense_layers: Vec<RustDenseLayer> = Vec::new();
+        for i in 0..layers.len() - 1 {
+            let layer = RustDenseLayer::new(layers[i], layers[i + 1]);
+            dense_layers.push(layer);
+        }
+
+        let rust_model = RustMLP::new(dense_layers, is_classification);
+
+        Ok(PyMLP { model: rust_model })
+
+    }
+
+    fn predict(&self, x: Vec<f64>) -> PyResult<Vec<f64>> {
+        Ok(self.model.predict(&x))
+    }
+
+    fn fit(&mut self, x_train: Vec<Vec<f64>>, y_train: Vec<f64>, epochs: usize, lr : f64) -> PyResult<()> {
+        self.model.train(&x_train, &y_train, epochs, lr);
+        Ok(())
+    }
+}
+
 #[pymethods]
 impl PyMLP {
 
