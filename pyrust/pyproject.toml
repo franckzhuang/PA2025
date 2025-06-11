@@ -1,0 +1,9 @@
+[project]
+name = "pyrust"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "fiftyone==1.5.2",
+    "numpy>=2.3.0",
+    "pymongo==4.9.2",
+]

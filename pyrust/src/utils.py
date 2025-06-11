@@ -53,8 +53,8 @@ class Logger:
             len_real_images,
             len_ai_images,
             total_images,
-            config["epochs"],
-            config["learning_rate"],
+            config.get("epochs", "N/A"),
+            config.get("learning_rate", "N/A"),
             status.value,
             error_message,
             f"{final_accuracy:.2f}%" if final_accuracy is not None else "N/A",
@@ -130,7 +130,7 @@ class DataLoader:
                 if current_loaded_for_class >= config["max_images_per_class"]:
                     break
                 if image_name.lower().endswith((".png", ".jpg", ".jpeg")):
-                    full_path = os.path.join(folder_path, image_name) # Obtenir le chemin complet
+                    full_path = os.path.join(folder_path, image_name)
                     features = ImageUtils.preprocess_image(
                         full_path, config["image_size"]
                     )
@@ -156,3 +156,19 @@ class DataLoader:
 
         X_data_shuffled, y_data_shuffled, files_shuffled = [list(t) for t in zip(*combined_data)]
         return X_data_shuffled, y_data_shuffled, files_shuffled, loaded_counts["real"], loaded_counts["ai"]
+
+
+class EnvUtils:
+    @staticmethod
+    def get_env_variable(var_name, default_value=None):
+        return os.getenv(var_name, default_value)
+
+    @staticmethod
+    def set_env_variable(var_name, value):
+        os.environ[var_name] = value
+        print(f"Environment variable '{var_name}' set to '{value}'.")
+    def get_env_var(name: str, default: str = None) -> str:
+        value = os.environ.get(name, default)
+        if value is None:
+            raise ValueError(f"{name} environment variable not set and no default provided")
+        return value

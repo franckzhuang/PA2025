@@ -5,18 +5,16 @@ from utils import Logger, Status, DataLoader
 
 # Change this function to implement multiple models
 def train_and_evaluate_model(X_train, y_train, file_names, config):
-    print("\nTraining LinearModel...")
-    model = mk.LinearModel(
-        learning_rate=config["learning_rate"],
-        epochs=config["epochs"],
-        mode="classification",
-        verbose=config["verbose"],
+    print("\nTraining LinearClassification...")
+    model = mk.LinearClassification(
+        verbose=config.get("verbose", True),
+        learning_rate=config.get("learning_rate", 0.01),
     )
 
     model.fit(X_train, y_train)
     print("Training finished.")
 
-    predictions = model.predict(X_train)
+    predictions = [model.predict(x) for x in X_train]
 
     correct = sum(1 for i in range(len(y_train)) if y_train[i] == predictions[i])
     accuracy = (correct / len(y_train)) * 100 if len(y_train) > 0 else 0
@@ -33,6 +31,7 @@ def train_and_evaluate_model(X_train, y_train, file_names, config):
             actual_str = "Real" if y_train[i] == 1.0 else "AI"
             pred_str = "Real" if predictions[i] == 1.0 else "AI"
             print(f"  {file_names[i]:<30} | {actual_str:<5} | {pred_str:<5}")
+
     return accuracy
 
 
@@ -42,10 +41,8 @@ def run_experiment():
         "max_images_per_class": 90,
         "real_images_path": "data/real",
         "ai_images_path": "data/ai",
-        "learning_rate": 0.1,
-        "epochs": 100,
-        "verbose": False, 
-        "max_predictions_to_show": 100,
+        "verbose": True,
+        "learning_rate": 0.01,
     }
 
     X_images, y_labels, files_name_loaded, len_real, len_ai = DataLoader.load_data(experiment_config)
@@ -56,7 +53,7 @@ def run_experiment():
             "Not enough images (less than 2) loaded. Stopping the experiment."
         )
         Logger.log_experiment_parameters(
-            model="LinearModel",
+            model="LinearClassification",
             config=experiment_config,
             len_real_images=len_real,
             len_ai_images=len_ai,
@@ -75,7 +72,7 @@ def run_experiment():
         print(f"Error during the experiment : {e}")
     finally:
         Logger.log_experiment_parameters(
-            model="LinearModel", # Later, change this with the model name
+            model="LinearClassification", # Later, change this with the model name
             config=experiment_config,
             len_real_images=len_real,
             len_ai_images=len_ai,
@@ -83,6 +80,7 @@ def run_experiment():
             status=Status.SUCCESS,
             final_accuracy=final_accuracy,
         )
+
 
 
 if __name__ == "__main__":
