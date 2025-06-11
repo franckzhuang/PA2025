@@ -73,9 +73,6 @@ impl PyLinearRegression {
     }
 }
 
-
-
-
 #[pyclass(name = "LinearClassification")]
 struct PyLinearClassification {
     model: RustLinearClassification,
@@ -111,38 +108,6 @@ impl PyLinearClassification {
 #[pyclass(name = "MLP")]
 struct PyMLP {
     model: RustMLP,
-}
-
-#[pyclass(name = "MLP")]
-struct PyMLP {
-    model: RustMLP,
-}
-
-#[pymethods]
-impl PyMLP {
-
-    #[new]
-    fn new(layers: Vec<usize>, is_classification:bool) ->PyResult<Self> {
-        let mut dense_layers: Vec<RustDenseLayer> = Vec::new();
-        for i in 0..layers.len() - 1 {
-            let layer = RustDenseLayer::new(layers[i], layers[i + 1]);
-            dense_layers.push(layer);
-        }
-
-        let rust_model = RustMLP::new(dense_layers, is_classification);
-
-        Ok(PyMLP { model: rust_model })
-
-    }
-
-    fn predict(&self, x: Vec<f64>) -> PyResult<Vec<f64>> {
-        Ok(self.model.predict(&x))
-    }
-
-    fn fit(&mut self, x_train: Vec<Vec<f64>>, y_train: Vec<f64>, epochs: usize, lr : f64) -> PyResult<()> {
-        self.model.train(&x_train, &y_train, epochs, lr);
-        Ok(())
-    }
 }
 
 #[pymethods]
@@ -208,8 +173,7 @@ struct PySVM {
 #[pymethods]
 impl PySVM {
     #[new]
-    fn new( kernel: String, c: Option<f64>, gamma: Option<f64>) -> PyResult<Self> {
-        // kernel: "linear" or "rbf", gamma for rbf only
+    fn new(kernel: String, c: Option<f64>, gamma: Option<f64>) -> PyResult<Self> {
         let kernel_type = match kernel.as_str() {
             "linear" => KernelType::Linear,
             "rbf" => {
@@ -236,14 +200,35 @@ impl PySVM {
     fn b(&self) -> f64 {
         self.model.b
     }
+
+    #[getter]
+    fn alphas(&self) -> Vec<f64> {
+        self.model.alphas.clone()
+    }
+
+    #[getter]
+    fn support_vectors(&self) -> Vec<Vec<f64>> {
+        self.model.support_vectors.clone()
+    }
+
+    #[getter]
+    fn support_labels(&self) -> Vec<f64> {
+        self.model.support_labels.clone()
+    }
+
+    #[getter]
+    fn weights(&self) -> Option<Vec<f64>> {
+        self.model.weights()
+    }
+
 }
 
 #[pymodule]
 fn mini_keras(_py: Python, m: &PyModule) -> PyResult<()> {
     // m.add_class::<PyLinearModelGradient>()?;
     m.add_class::<PyMLP>()?;
-    m.add_class::<PyLinearRegression>()?;
-    m.add_class::<PyLinearClassification>()?;
+    // m.add_class::<PyLinearRegression>()?;
+    // m.add_class::<PyLinearClassification>()?;
     m.add_class::<PySVM>()?;
     Ok(())
 }
