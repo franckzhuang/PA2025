@@ -11,6 +11,7 @@ mod linear_model_gradient;
 mod mlp;
 mod utils;
 mod linear_model;
+mod svm;
 
 use crate::linear_model_gradient::LinearModelGradientDescent as RustLinearModelGradient;
 use crate::linear_model::LinearRegression as RustLinearRegression;
@@ -22,6 +23,8 @@ use crate::linear_model::LinearClassification as RustLinearClassification;
 use crate::mlp::Perceptron as RustPerceptron;
 use crate::mlp::DenseLayer as RustDenseLayer;
 use crate::mlp::MLP as RustMLP;
+use crate::svm::{SVM as RustSVM, KernelType};
+
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[pyclass(name = "LinearRegression")]
@@ -165,11 +168,50 @@ impl PyMLP {
 //     }
 // }
 
+#[pyclass(name = "SVM")]
+struct PySVM {
+    model: RustSVM,
+}
+
+#[pymethods]
+impl PySVM {
+    #[new]
+    fn new( kernel: String, c: Option<f64>, gamma: Option<f64>) -> PyResult<Self> {
+        // kernel: "linear" or "rbf", gamma for rbf only
+        let kernel_type = match kernel.as_str() {
+            "linear" => KernelType::Linear,
+            "rbf" => {
+                let g = gamma.ok_or_else(|| PyValueError::new_err("Gamma required for RBF"))?;
+                KernelType::RBF(g)
+            }
+            _ => return Err(PyValueError::new_err("Kernel must be 'linear' or 'rbf'")),
+        };
+        Ok(PySVM {
+            model: RustSVM::new(c, kernel_type),
+        })
+    }
+
+    fn fit(&mut self, x_train: Vec<Vec<f64>>, y_train: Vec<f64>) -> PyResult<()> {
+        self.model.fit(&x_train, &y_train);
+        Ok(())
+    }
+
+    fn predict(&self, x: Vec<Vec<f64>>) -> PyResult<Vec<i8>> {
+        Ok(self.model.predict(&x))
+    }
+
+    #[getter]
+    fn b(&self) -> f64 {
+        self.model.b
+    }
+}
+
 #[pymodule]
 fn mini_keras(_py: Python, m: &PyModule) -> PyResult<()> {
     // m.add_class::<PyLinearModelGradient>()?;
     m.add_class::<PyMLP>()?;
     m.add_class::<PyLinearRegression>()?;
     m.add_class::<PyLinearClassification>()?;
+    m.add_class::<PySVM>()?;
     Ok(())
 }
