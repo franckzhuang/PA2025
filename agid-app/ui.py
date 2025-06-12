@@ -18,7 +18,7 @@ def display_uploaded_image(uploaded_file):
 
     image = Image.open(uploaded_file)
     buffered = BytesIO()
-    image.save(buffered, format="JPG")
+    image.save(buffered, format="PNG")
     img_b64 = base64.b64encode(buffered.getvalue()).decode()
 
     st.markdown(f"""

@@ -75,7 +75,6 @@ if st.sidebar.button("Start Training"):
         payload["hidden_layer_sizes"] = [
             int(x) for x in params["hidden_layer_sizes"].split(",") if x.strip().isdigit()
         ]
-    # POST to the right endpoint
     try:
         r = requests.post(f"{API_URL}/train/{endpoint_map[model_type]}", json=payload)
         r.raise_for_status()
