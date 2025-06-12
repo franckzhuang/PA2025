@@ -4,6 +4,8 @@ import numpy as np
 
 
 
+
+
 def test_1_mlp_classification():
 
     mlp_cls = mk.MLP(
@@ -362,8 +364,37 @@ def test_5_regression():
     predictions = model.predict(test_data)
     print(f"Prédictions (régression) pour {test_data}: {predictions}")
 
+
+def test_rbf_naive():
+
+    rbf = mk.RBFNaive(
+        x=[[3, 4], [0.5, 0.5], [3, 3]],
+        y=[1, 0, 1],
+        gamma=0.001,
+        is_classification=False
+    )
+
+    print(rbf.predict([3, 4]))
+
+
+def test_rbf_kmeans():
+
+    rbf = mk.RBFKMeans(
+        x=[[3, 4], [0.5, 0.5], [3, 3]],
+        y=[1, 0, 1],
+        k=2,
+        gamma=0.001,
+        max_iters=1000,
+        is_class=True
+    )
+
+    print(rbf.predict([0.1, 0.1]))
+
+
 if __name__ == "__main__":
+    test_rbf_kmeans()
     # pass
+    # test_rbf_naive()
     # test_1_mlp_reg()
     # test_1_mlp_classification()
     # test_2_mlp_classification()
@@ -386,4 +417,4 @@ if __name__ == "__main__":
     # test_2_mlp_reg()
     # test_3_mlp_reg()
     # test_4_mlp_reg()
-    test_5_mlp_reg()
+    # test_5_mlp_reg()
