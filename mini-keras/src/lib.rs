@@ -13,6 +13,9 @@ mod utils;
 mod linear_model;
 mod svm;
 
+mod rbf_naive;
+mod rbf;
+
 use crate::linear_model_gradient::LinearModelGradientDescent as RustLinearModelGradient;
 use crate::linear_model::LinearRegression as RustLinearRegression;
 use crate::linear_model::LinearClassification as RustLinearClassification;
@@ -24,6 +27,47 @@ use crate::mlp::Perceptron as RustPerceptron;
 use crate::mlp::DenseLayer as RustDenseLayer;
 use crate::mlp::MLP as RustMLP;
 use crate::svm::{SVM as RustSVM, KernelType};
+
+
+use crate::rbf_naive::RBFNaive as RustRBFNaive;
+use crate::rbf::RBFKMeans as RustRBFKmeans;
+
+
+#[pyclass(name="RBFNaive")]
+pub struct PyRBFNaive {
+    model: RustRBFNaive,
+}
+
+#[pymethods]
+impl PyRBFNaive {
+    #[new]
+    fn new(x: Vec<Vec<f64>>, y: Vec<f64>, gamma: f64, is_class: bool) -> PyResult<Self> {
+        let model = RustRBFNaive::new(x, y, gamma, is_class);
+        Ok(PyRBFNaive { model })
+    }
+
+    fn predict(&self, x_new: Vec<f64>) -> PyResult<f64> {
+        Ok(self.model.predict(&x_new))
+    }
+}
+
+#[pyclass(name="RBFKMeans")]
+pub struct PyRBFKMeans {
+    model: RustRBFKmeans,
+}
+
+#[pymethods]
+impl PyRBFKMeans {
+    #[new]
+    fn new(x: Vec<Vec<f64>>, y: Vec<f64>, k: usize, gamma: f64, max_iters: usize, is_class: bool) -> PyResult<Self> {
+        let model = RustRBFKmeans::new(x, y, k, gamma, max_iters, is_class);
+        Ok(PyRBFKMeans { model })
+    }
+
+    fn predict(&self, x_new: Vec<f64>) -> PyResult<f64> {
+        Ok(self.model.predict(&x_new))
+    }
+}
 
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -39,11 +83,11 @@ impl PyLinearRegression {
         Ok(PyLinearRegression { model: RustLinearRegression::new() })
     }
 
+
     fn fit(&mut self, x_train: Vec<Vec<f64>>, y_train: Vec<f64>) -> PyResult<()> {
         self.model.fit(&x_train, &y_train);
         Ok(())
     }
-
     fn predict(&self, x: Vec<f64>) -> PyResult<f64> {
         Ok(self.model.predict(&x))
     }
@@ -139,31 +183,31 @@ impl PyMLP {
 
 
 
-// #[pyclass(name = "LinearModelGradient")]
-// struct PyLinearModelGradient {
-//     model: RustLinearModelGradient,
-// }
+#[pyclass(name = "LinearModelGradient")]
+struct PyLinearModelGradient {
+    model: RustLinearModelGradient,
+}
 
-// #[pymethods]
-// impl PyLinearModelGradient {
-//     #[new]
-//     fn new(learning_rate: f64, epochs: usize, mode: String, verbose: bool) -> PyResult<Self> {
-//         let rust_model =
-//             RustLinearModelGradient::new(learning_rate, epochs, mode, verbose)
-//                 .map_err(|e_str| PyValueError::new_err(e_str))?;
-// 
-//         Ok(PyLinearModelGradient { model: rust_model })
-//     }
-// 
-//     fn fit(&mut self, x_train: Vec<Vec<f64>>, y_train: Vec<f64>) -> PyResult<()> {
-//         self.model.fit(&x_train, &y_train);
-//         Ok(())
-//     }
-// 
-//     fn predict(&self, x: Vec<Vec<f64>>) -> PyResult<Vec<f64>> {
-//         Ok(self.model.predict(&x))
-//     }
-// }
+#[pymethods]
+impl PyLinearModelGradient {
+    #[new]
+    fn new(learning_rate: f64, epochs: usize, mode: String, verbose: bool) -> PyResult<Self> {
+        let rust_model =
+            RustLinearModelGradient::new(learning_rate, epochs, mode, verbose)
+                .map_err(|e_str| PyValueError::new_err(e_str))?;
+
+        Ok(PyLinearModelGradient { model: rust_model })
+    }
+
+    fn fit(&mut self, x_train: Vec<Vec<f64>>, y_train: Vec<f64>) -> PyResult<()> {
+        self.model.fit(&x_train, &y_train);
+        Ok(())
+    }
+
+    fn predict(&self, x: Vec<Vec<f64>>) -> PyResult<Vec<f64>> {
+        Ok(self.model.predict(&x))
+    }
+}
 
 #[pyclass(name = "SVM")]
 struct PySVM {
@@ -225,10 +269,12 @@ impl PySVM {
 
 #[pymodule]
 fn mini_keras(_py: Python, m: &PyModule) -> PyResult<()> {
-    // m.add_class::<PyLinearModelGradient>()?;
+    m.add_class::<PyLinearModelGradient>()?;
     m.add_class::<PyMLP>()?;
-    // m.add_class::<PyLinearRegression>()?;
-    // m.add_class::<PyLinearClassification>()?;
+    m.add_class::<PyLinearRegression>()?;
+    m.add_class::<PyLinearClassification>()?;
     m.add_class::<PySVM>()?;
+    m.add_class::<PyRBFNaive>()?;
+    m.add_class::<PyRBFKMeans>()?;
     Ok(())
 }

@@ -214,21 +214,21 @@ fn main() {
     // }
 
     // Regression: learn y = x identity
-    println!("Regression Identity example");
-    let mut l1 = DenseLayer::new(1, 4);
-    let mut l2 = DenseLayer::new(4, 1);
-    let mut mlp = MLP::new(vec![l1, l2], false);
-    let X = vec![vec![1.0], vec![2.0], vec![3.0], vec![4.0], vec![5.0]];
-    let y = vec![1.0, 2.0, 3.0, 4.0, 5.0];
-    println!("before training");
-    for (input, &target) in X.iter().zip(y.iter()) {
-        println!("{:?}", mlp.predict(input))
-    }
-    mlp.train(&X, &y, 5000, 0.01);
-    println!("after training");
-    for (input, &target) in X.iter().zip(y.iter()) {
-        println!("{:?}", mlp.predict(input))
-    }
+    // println!("Regression Identity example");
+    // let mut l1 = DenseLayer::new(1, 4);
+    // let mut l2 = DenseLayer::new(4, 1);
+    // let mut mlp = MLP::new(vec![l1, l2], false);
+    // let X = vec![vec![1.0], vec![2.0], vec![3.0], vec![4.0], vec![5.0]];
+    // let y = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+    // println!("before training");
+    // for (input, &target) in X.iter().zip(y.iter()) {
+    //     println!("{:?}", mlp.predict(input))
+    // }
+    // mlp.train(&X, &y, 5000, 0.01);
+    // println!("after training");
+    // for (input, &target) in X.iter().zip(y.iter()) {
+    //     println!("{:?}", mlp.predict(input))
+    // }
 
     // Classification test
     // Classification: threshold at x>=2
@@ -242,7 +242,7 @@ fn main() {
     for (input, &target) in X.iter().zip(y.iter()) {
         println!("{:?}", mlp.predict(input))
     }
-    mlp.train(&X, &y, 5000, 0.1);
+    mlp.train(&X, &y, 1000000, 0.1);
     println!("after training");
     for (input, &target) in X.iter().zip(y.iter()) {
         println!("{:?}", mlp.predict(input))
