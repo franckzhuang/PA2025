@@ -165,15 +165,15 @@ pub struct RBFKMeans {
 
 impl RBFKMeans {
     pub fn new(
-        x: &[Vec<f64>],
-        y: &[f64],
+        x: Vec<Vec<f64>>,
+        y: Vec<f64>,
         k: usize,
         gamma: f64,
         max_iters: usize,
         is_class: bool,
     ) -> Self {
         // 1. fit k-means
-        let centroids = KMeans::new(k, max_iters).fit(x);
+        let centroids = KMeans::new(k, max_iters).fit(&x);
         // 2. build design matrix Phi (m x k)
         let m = x.len();
         let mut phi = vec![vec![0.0; k]; m];
@@ -186,7 +186,7 @@ impl RBFKMeans {
         let phi_t = transpose(&phi);            // k x m
         let phi_t_phi = matrix_multiply(&phi_t, &phi); // k x k
         let inv = invert_matrix(&phi_t_phi);   // k x k
-        let phi_t_y = matrix_vector_product(&phi_t, y); // k
+        let phi_t_y = matrix_vector_product(&phi_t, &y); // k
         let w = matrix_vector_product(&inv, &phi_t_y);
 
         Self {
