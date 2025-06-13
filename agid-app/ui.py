@@ -5,7 +5,7 @@ from io import BytesIO
 
 
 def inject_styles():
-    with open("agid_app/styles.css", "r") as f:
+    with open("agid-app/styles.css", "r") as f:
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
 

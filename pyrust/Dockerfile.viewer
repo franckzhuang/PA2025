@@ -1,0 +1,19 @@
+FROM python:3.12-slim
+
+RUN apt-get update && \
+    apt-get install -y git libcurl4 libssl3 && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN pip install uv
+
+COPY --from=ghcr.io/astral-sh/uv:0.7.12 /uv /bin/uv
+COPY uv.lock .python-version pyproject.toml ./
+
+RUN uv sync
+
+
+WORKDIR /app
+
+COPY src/load_fiftyone.py ./
+
+CMD ["uv", "run", "load_fiftyone.py"]

@@ -117,6 +117,7 @@ impl PyLinearRegression {
     }
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[pyclass(name = "LinearClassification")]
 struct PyLinearClassification {
     model: RustLinearClassification,
@@ -145,6 +146,18 @@ impl PyLinearClassification {
 
     fn get_bias(&self) -> PyResult<f64> {
         Ok(self.model.get_bias())
+    }
+
+    fn to_json(&self) -> PyResult<String> {
+        serde_json::to_string_pretty(&self.model)
+            .map_err(|e| PyValueError::new_err(e.to_string()))
+    }
+
+    #[staticmethod]
+    fn from_json(json_str: String) -> PyResult<Self> {
+        let model: RustLinearClassification = serde_json::from_str(&json_str)
+            .map_err(|e| PyValueError::new_err(e.to_string()))?;
+        Ok(PyLinearClassification { model })
     }
 }
 
