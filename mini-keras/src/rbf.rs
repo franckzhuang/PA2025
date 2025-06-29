@@ -1,5 +1,4 @@
 use rand::prelude::SliceRandom;
-use std::error::Error;
 
 /// Multiply matrix (m x n) by vector (n) => vector (m)
 fn matrix_vector_product(matrix: &[Vec<f64>], vector: &[f64]) -> Vec<f64> {
@@ -64,7 +63,7 @@ fn invert_matrix(matrix: &[Vec<f64>]) -> Vec<Vec<f64>> {
         //     // return Err("Singular matrix".into());
         // }
         for j in 0..2 * n {
-            aug[i][j] /= (pivot + 1e-12);
+            aug[i][j] /= pivot + 1e-12;
         }
         for k in 0..n {
             if k != i {
@@ -146,7 +145,7 @@ impl KMeans {
     }
 
     fn initialize_centroids(&self, x: &[Vec<f64>]) -> Vec<Vec<f64>> {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let mut centroids = x.to_vec();
         centroids.shuffle(&mut rng);
         centroids.truncate(self.k);
