@@ -50,16 +50,17 @@ impl SVM {
         }
     }
 
-    pub fn fit(&mut self, x: &Vec<Vec<f64>>, y: &Vec<f64>) {
-        /// Minimize (1/2) α^T P α + q^T α
-        /// subject to G α ≤ h, A α = b
+    /// Minimize (1/2) α^T P α + q^T α
+    /// subject to G α ≤ h, A α = b
 
-        /// where:
-        /// - P[i,j] = y_i y_j K(x_i, x_j) (Gram matrix with kernel)
-        /// - q = vector of -1
-        /// - A = row vector of labels y^T (equality constraint)
-        /// - b = 0
-        /// - G and h encode constraints 0 ≤ α_i ≤ C (soft margin) or α_i ≥ 0 (hard margin)
+    /// where:
+    /// - P[i,j] = y_i y_j K(x_i, x_j) (Gram matrix with kernel)
+    /// - q = vector of -1
+    /// - A = row vector of labels y^T (equality constraint)
+    /// - b = 0
+    /// - G and h encode constraints 0 ≤ α_i ≤ C (soft margin) or α_i ≥ 0 (hard margin)
+    pub fn fit(&mut self, x: &Vec<Vec<f64>>, y: &Vec<f64>) {
+        
         let n = x.len();
 
         // P[i][j] = y_i y_j K(x_i, x_j)
@@ -91,7 +92,7 @@ impl SVM {
         // Contraint 2 : 0 ≤ α_i ≤ C (soft margin) or α_i ≥ 0 (hard margin)
 
         let c = self.c.unwrap_or(INFINITY);
-        let mut l = vec![0.0; n + 1]; // Lower bounds (always 0)
+        let l = vec![0.0; n + 1]; // Lower bounds (always 0)
         let mut u = vec![0.0];        // Upper bounds
         u.extend(vec![c; n]);         // Bounds if α_i (C or ∞)
 

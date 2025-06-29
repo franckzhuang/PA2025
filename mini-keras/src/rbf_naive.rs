@@ -1,4 +1,3 @@
-use std::error::Error;
 
 /// square matrix X column vector.
 fn matrix_vector_product(matrix: &[Vec<f64>], vector: &[f64]) -> Vec<f64> {
@@ -43,7 +42,7 @@ fn invert_matrix(matrix: &[Vec<f64>]) -> Vec<Vec<f64>> {
         }
         // Normalize pivot row
         for j in 0..2 * n {
-            aug[i][j] /= (pivot+ 1e-12);
+            aug[i][j] /= pivot+ 1e-12;
         }
         // Eliminate other rows
         for k in 0..n {

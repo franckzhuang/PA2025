@@ -3,8 +3,8 @@
 use pyo3::prelude::*;
 use pyo3::types::PyModule;
 use pyo3::exceptions::PyValueError;
-use numpy::{PyArray1, PyArray2};
-use std::fs::File;
+use pyo3::ffi::PyModuleDef;
+use pyo3::impl_::wrap::SomeWrap;
 use serde::{Deserialize, Serialize};
 
 mod linear_model_gradient;
@@ -21,10 +21,9 @@ use crate::linear_model::LinearRegression as RustLinearRegression;
 use crate::linear_model::LinearClassification as RustLinearClassification;
 
 
-// use crate::mlp::Prediction as RustPrediction;
-// use crate::mlp::Prediction;
-use crate::mlp::Perceptron as RustPerceptron;
-use crate::mlp::DenseLayer as RustDenseLayer;
+
+use crate::mlp::Dense as RustDenseLayer;
+use crate::mlp::Activation as RustActivation;
 use crate::mlp::MLP as RustMLP;
 use crate::svm::{SVM as RustSVM, KernelType};
 
@@ -171,10 +170,18 @@ struct PyMLP {
 impl PyMLP {
 
     #[new]
-    fn new(layers: Vec<usize>, is_classification:bool) ->PyResult<Self> {
+    fn new(layers: Vec<usize>, is_classification:bool, activations: Vec<str>) ->PyResult<Self> {
         let mut dense_layers: Vec<RustDenseLayer> = Vec::new();
         for i in 0..layers.len() - 1 {
-            let layer = RustDenseLayer::new(layers[i], layers[i + 1]);
+            let layer = RustDenseLayer::new(
+                layers[i], 
+                layers[i + 1],
+                match activations[i] {
+                    Some("sigmoid") => RustActivation::Sigmoid,
+                    Some("linear") => RustActivation::Linear,
+                    _ => return Err(PyValueError::new_err("Invalid activation function")),
+                }
+            );
             dense_layers.push(layer);
         }
 
@@ -183,11 +190,11 @@ impl PyMLP {
         Ok(PyMLP { model: rust_model })
 
     }
-
-    fn predict(&self, x: Vec<f64>) -> PyResult<Vec<f64>> {
+    
+    fn predict(&mut self, x: Vec<f64>) -> PyResult<Vec<f64>> {
         Ok(self.model.predict(&x))
     }
-
+    
     fn fit(&mut self, x_train: Vec<Vec<f64>>, y_train: Vec<f64>, epochs: usize, lr : f64) -> PyResult<()> {
         self.model.train(&x_train, &y_train, epochs, lr);
         Ok(())

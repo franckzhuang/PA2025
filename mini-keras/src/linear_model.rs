@@ -1,5 +1,4 @@
 use ndarray::{Array1, Array2, s};
-use ndarray::linalg::Dot;
 use ndarray_linalg::Inverse;
 use serde::{Serialize, Deserialize};
 use std::fs::File;
