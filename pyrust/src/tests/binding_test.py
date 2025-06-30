@@ -2,15 +2,9 @@ import mini_keras as mk
 import numpy as np
 
 
-
-
-
-
 def test_1_mlp_classification():
 
-    mlp_cls = mk.MLP(
-        layers=[2, 1], is_classification=True
-    )
+    mlp_cls = mk.MLP(layers=[2, 1], is_classification=True)
 
     X_train_py = [[1.0, 1.0], [2.0, 3.0], [3.0, 3.0]]
     y_train_py = [1.0, 0.0, 0.0]
@@ -24,16 +18,18 @@ def test_1_mlp_classification():
     predictions_cls = [mlp_cls.predict(x) for x in test_data]
     print(f"Prédictions (classification) pour {test_data}: {predictions_cls}")
 
+
 def test_2_mlp_classification():
 
-    mlp_cls = mk.MLP(
-        layers=[2,1], is_classification=True
+    mlp_cls = mk.MLP(layers=[2, 1], is_classification=True)
+
+    X = np.concatenate(
+        [
+            np.random.random((50, 2)) * 0.9 + np.array([1, 1]),
+            np.random.random((50, 2)) * 0.9 + np.array([2, 2]),
+        ]
     )
-
-    X = np.concatenate([np.random.random((50, 2)) * 0.9 + np.array([1, 1]),
-                        np.random.random((50, 2)) * 0.9 + np.array([2, 2])])
     Y = np.concatenate([np.ones((50, 1)), np.ones((50, 1)) * -1.0])
-
 
     print("Entraînement du MLP catégorie classification...")
     mlp_cls.fit(X, Y, epochs=1000, lr=0.1)
@@ -48,9 +44,7 @@ def test_2_mlp_classification():
 def test_3_mlp_classification():
 
     # XOR
-    mlp_cls = mk.MLP(
-        layers=[2, 2, 1], is_classification=True
-    )
+    mlp_cls = mk.MLP(layers=[2, 2, 1], is_classification=True)
 
     X_train_py = [[1.0, 0.0], [0.0, 1.0], [0.0, 0.0], [1.0, 1.0]]
     y_train_py = [1.0, 1.0, 0.0, 0.0]
@@ -67,9 +61,7 @@ def test_3_mlp_classification():
 def test_4_mlp_classification():
     X = np.random.random((500, 2)) * 2.0 - 1.0
     Y = np.array([1 if abs(p[0]) <= 0.3 or abs(p[1]) <= 0.3 else -1 for p in X])
-    mlp_cls = mk.MLP(
-        layers=[2, 4, 1], is_classification=True
-    )
+    mlp_cls = mk.MLP(layers=[2, 4, 1], is_classification=True)
 
     mlp_cls.fit(X, Y, epochs=1000, lr=0.1)
 
@@ -100,11 +92,17 @@ def test_1_classification():
 
 
 def test_2_classification():
-    X = np.concatenate([np.random.random((50, 2)) * 0.9 + np.array([1, 1]),
-                        np.random.random((50, 2)) * 0.9 + np.array([2, 2])])
+    X = np.concatenate(
+        [
+            np.random.random((50, 2)) * 0.9 + np.array([1, 1]),
+            np.random.random((50, 2)) * 0.9 + np.array([2, 2]),
+        ]
+    )
     Y = np.concatenate([np.ones((50, 1)), np.ones((50, 1)) * -1.0])
 
-    model = mk.LinearModel(learning_rate=0.01, epochs=200, mode="classification", verbose=False)
+    model = mk.LinearModel(
+        learning_rate=0.01, epochs=200, mode="classification", verbose=False
+    )
 
     model.fit(X, Y.flatten())
 
@@ -118,7 +116,9 @@ def test_3_classification():
     X = np.array([[1, 0], [0, 1], [0, 0], [1, 1]])
     Y = np.array([1, 1, -1, -1])
 
-    model = mk.LinearModel(learning_rate=0.01, epochs=1000, mode="classification", verbose=False)
+    model = mk.LinearModel(
+        learning_rate=0.01, epochs=1000, mode="classification", verbose=False
+    )
 
     model.fit(X, Y)
 
@@ -127,13 +127,13 @@ def test_3_classification():
     print(f"Prédictions (classification) pour {test_data}: {predictions}")
 
 
-
-
 def test_4_classification():
     X = np.random.random((500, 2)) * 2.0 - 1.0
     Y = np.array([1 if abs(p[0]) <= 0.3 or abs(p[1]) <= 0.3 else -1 for p in X])
 
-    model = mk.LinearModel(learning_rate=0.01, epochs=200, mode="classification", verbose=False)
+    model = mk.LinearModel(
+        learning_rate=0.01, epochs=200, mode="classification", verbose=False
+    )
 
     model.fit(X, Y)
 
@@ -141,14 +141,13 @@ def test_4_classification():
     predictions = model.predict(test_data)
     print(f"Prédictions (classification) pour {test_data}: {predictions}")
 
+
 def test_1_mlp_reg():
 
-    mlp_cls = mk.MLP(
-        layers=[1, 1], is_classification=False
-    )
+    mlp_cls = mk.MLP(layers=[1, 1], is_classification=False)
 
-    X = np.array([[1],[2]])
-    Y = np.array([2,3])
+    X = np.array([[1], [2]])
+    Y = np.array([2, 3])
 
     print("Entraînement du MLP catégorie regression...")
     mlp_cls.fit(X, Y, epochs=1000, lr=0.1)
@@ -159,23 +158,13 @@ def test_1_mlp_reg():
     predictions_cls = [mlp_cls.predict(x) for x in test_data]
     print(f"Prédictions (regression) pour {test_data}: {predictions_cls}")
 
+
 def test_2_mlp_reg():
 
-    mlp_cls = mk.MLP(
-        layers=[1, 2,1], is_classification=False
-    )
+    mlp_cls = mk.MLP(layers=[1, 2, 1], is_classification=False)
     # probably gradient explosion
-    X = np.array([
-        [1.0],
-        [2.0],
-        [3.0]
-    ])
-    Y = np.array([
-        2.0,
-        3.0,
-        2.5
-    ])
-
+    X = np.array([[1.0], [2.0], [3.0]])
+    Y = np.array([2.0, 3.0, 2.5])
 
     print("Entraînement du MLP catégorie regression...")
     mlp_cls.fit(X, Y, epochs=1000, lr=0.1)
@@ -189,22 +178,10 @@ def test_2_mlp_reg():
 
 def test_3_mlp_reg():
 
+    mlp_cls = mk.MLP(layers=[2, 1], is_classification=False)
 
-    mlp_cls = mk.MLP(
-        layers=[2, 1], is_classification=False
-    )
-
-    X = np.array([
-        [1, 1],
-        [2, 2],
-        [3, 1]
-    ])
-    Y = np.array([
-        2,
-        3,
-        2.5
-    ])
-
+    X = np.array([[1, 1], [2, 2], [3, 1]])
+    Y = np.array([2, 3, 2.5])
 
     print("Entraînement du MLP catégorie regression...")
 
@@ -216,19 +193,9 @@ def test_3_mlp_reg():
 
 
 def test_4_mlp_reg():
-    X = np.array([
-        [1, 1],
-        [2, 2],
-        [3, 3]
-    ])
-    Y = np.array([
-        1,
-        2,
-        3
-    ])
-    mlp_cls = mk.MLP(
-        layers=[2, 1], is_classification=False
-    )
+    X = np.array([[1, 1], [2, 2], [3, 3]])
+    Y = np.array([1, 2, 3])
+    mlp_cls = mk.MLP(layers=[2, 1], is_classification=False)
 
     mlp_cls.fit(X, Y, epochs=1000, lr=0.1)
 
@@ -238,21 +205,16 @@ def test_4_mlp_reg():
 
 
 def test_5_mlp_reg():
-    X = np.array([
-        [1, 0],
-        [0, 1],
-        [1, 1],
-        [0, 0],
-    ])
-    Y = np.array([
-        2,
-        1,
-        -2,
-        -1
-    ])
-    mlp_cls = mk.MLP(
-        layers=[2, 2, 1], is_classification=False
+    X = np.array(
+        [
+            [1, 0],
+            [0, 1],
+            [1, 1],
+            [0, 0],
+        ]
     )
+    Y = np.array([2, 1, -2, -1])
+    mlp_cls = mk.MLP(layers=[2, 2, 1], is_classification=False)
 
     mlp_cls.fit(X, Y, epochs=1000, lr=0.1)
 
@@ -262,16 +224,8 @@ def test_5_mlp_reg():
 
 
 def test_1_regression():
-    X = np.array([
-        [1.0, 2.0],
-        [2.0, 3.0],
-        [3.0, 4.0]
-    ])
-    Y = np.array([
-        1.0,
-        2.0,
-        3.0
-    ])
+    X = np.array([[1.0, 2.0], [2.0, 3.0], [3.0, 4.0]])
+    Y = np.array([1.0, 2.0, 3.0])
 
     model = mk.LinearRegression()
     model.fit(X, Y)
@@ -282,19 +236,14 @@ def test_1_regression():
     predictions = model.predict(X)
     print(f"Prédictions (régression) pour {test_data}: {predictions}")
 
-def test_2_regression():
-    X = np.array([
-        [1],
-        [2],
-        [3]
-    ])
-    Y = np.array([
-        2,
-        3,
-        2.5
-    ])
 
-    model = mk.LinearModel(learning_rate=0.01, epochs=200, mode="regression", verbose=False)
+def test_2_regression():
+    X = np.array([[1], [2], [3]])
+    Y = np.array([2, 3, 2.5])
+
+    model = mk.LinearModel(
+        learning_rate=0.01, epochs=200, mode="regression", verbose=False
+    )
 
     model.fit(X, Y)
 
@@ -302,19 +251,14 @@ def test_2_regression():
     predictions = model.predict(test_data)
     print(f"Prédictions (régression) pour {test_data}: {predictions}")
 
-def test_3_regression():
-    X = np.array([
-        [1, 1],
-        [2, 2],
-        [3, 1]
-    ])
-    Y = np.array([
-        2,
-        3,
-        2.5
-    ])
 
-    model = mk.LinearModel(learning_rate=0.01, epochs=200, mode="regression", verbose=True)
+def test_3_regression():
+    X = np.array([[1, 1], [2, 2], [3, 1]])
+    Y = np.array([2, 3, 2.5])
+
+    model = mk.LinearModel(
+        learning_rate=0.01, epochs=200, mode="regression", verbose=True
+    )
 
     model.fit(X, Y)
 
@@ -322,19 +266,14 @@ def test_3_regression():
     predictions = model.predict(test_data)
     print(f"Prédictions (régression) pour {test_data}: {predictions}")
 
-def test_4_regression():
-    X = np.array([
-        [1, 1],
-        [2, 2],
-        [3, 3]
-    ])
-    Y = np.array([
-        1,
-        2,
-        3
-    ])
 
-    model = mk.LinearModel(learning_rate=0.01, epochs=200, mode="regression", verbose=False)
+def test_4_regression():
+    X = np.array([[1, 1], [2, 2], [3, 3]])
+    Y = np.array([1, 2, 3])
+
+    model = mk.LinearModel(
+        learning_rate=0.01, epochs=200, mode="regression", verbose=False
+    )
 
     model.fit(X, Y)
 
@@ -342,21 +281,21 @@ def test_4_regression():
     predictions = model.predict(test_data)
     print(f"Prédictions (régression) pour {test_data}: {predictions}")
 
-def test_5_regression():
-    X = np.array([
-        [1, 0],
-        [0, 1],
-        [1, 1],
-        [0, 0],
-    ])
-    Y = np.array([
-        2,
-        1,
-        -2,
-        -1
-    ])
 
-    model = mk.LinearModel(learning_rate=0.01, epochs=200, mode="regression", verbose=False)
+def test_5_regression():
+    X = np.array(
+        [
+            [1, 0],
+            [0, 1],
+            [1, 1],
+            [0, 0],
+        ]
+    )
+    Y = np.array([2, 1, -2, -1])
+
+    model = mk.LinearModel(
+        learning_rate=0.01, epochs=200, mode="regression", verbose=False
+    )
 
     model.fit(X, Y)
 
@@ -371,7 +310,7 @@ def test_rbf_naive():
         x=[[3, 4], [0.5, 0.5], [3, 3]],
         y=[1, 0, 1],
         gamma=0.001,
-        is_classification=False
+        is_classification=False,
     )
 
     print(rbf.predict([3, 4]))
@@ -385,7 +324,7 @@ def test_rbf_kmeans():
         k=2,
         gamma=0.001,
         max_iters=1000,
-        is_class=True
+        is_class=True,
     )
 
     print(rbf.predict([0.1, 0.1]))
@@ -405,7 +344,6 @@ if __name__ == "__main__":
     # test_2_classification()
     # test_3_classification()
     # test_4_classification()
-
 
     # test_1_regression()
     # test_2_regression()

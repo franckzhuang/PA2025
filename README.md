@@ -25,7 +25,7 @@ Take an image as an input and predict wether it is AI generated or not.
 - Interface : Ajouter la possibilité de choisir différents modèles (ajouter quelque chose de ludique comme le plus utilisé, un modèle meilleur en dessin ou en photo etc ...)
 
 ---
-Launch API :
+Launch API from project root directory:
 ```bash
-uv run uvicorn pyrust.src.api.main:app --host 0.0.0.0 --port 8000 --reload
+uv run uvicorn pyrust.src.api.app:app --host 0.0.0.0 --port 8000 --reload
 ```
