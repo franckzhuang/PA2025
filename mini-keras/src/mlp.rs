@@ -173,8 +173,10 @@ impl MLP {
                  y: &[f64],
                  epochs: usize,
                  lr: f64
-    ) {
+    ) -> Vec<f64> {
+        let mut train_losses:Vec<f64> = Vec::new();
         for _ in 0..epochs {
+            let mut total_loss: f64 = 0.0;
             for (xi, &yi) in x.iter().zip(y.iter()) {
                 // forward pass
                 let mut activations = xi.clone();
@@ -189,8 +191,15 @@ impl MLP {
                 for layer in self.layers.iter_mut().rev() {
                     deltas = layer.backward(&deltas, lr);
                 }
+                // accumulate loss
+                let loss: f64 = outs.iter().map(|&out| (out - yi).powi(2)).sum::<f64>() / outs.len() as f64;
+                total_loss += loss;
             }
+            // average loss for this epoch
+            total_loss /= x.len() as f64;
+            train_losses.push(total_loss);
         }
+        train_losses
     }
 }
 
@@ -201,7 +210,8 @@ fn main() {
     let mut mlp = MLP::new(vec![l1, l2], true);
     let x = vec![vec![1.0, 0.0], vec![0.0, 1.0], vec![0.0, 0.0], vec![1.0, 1.0]];
     let y = vec![1.0,1.0,0.0,0.0];
-    mlp.train(&x, &y, 100_000, 0.01);
+    let train_losses = mlp.train(&x, &y, 100_000, 0.01);
+    println!("Training losses: {:?}", train_losses);
     for x in x.iter() {
         println!("Prediction for {:?}: {:?}", x, mlp.predict(x));
     }
