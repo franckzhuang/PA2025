@@ -3,7 +3,7 @@
 use pyo3::prelude::*;
 use pyo3::types::PyModule;
 use pyo3::exceptions::PyValueError;
-use pyo3::ffi::PyModuleDef;
+// use pyo3::ffi::PyModuleDef;
 use pyo3::impl_::wrap::SomeWrap;
 use serde::{Deserialize, Serialize};
 
@@ -170,15 +170,15 @@ struct PyMLP {
 impl PyMLP {
 
     #[new]
-    fn new(layers: Vec<usize>, is_classification:bool, activations: Vec<str>) ->PyResult<Self> {
+    fn new(layers: Vec<usize>, is_classification:bool, activations: Vec<String> ) ->PyResult<Self> {
         let mut dense_layers: Vec<RustDenseLayer> = Vec::new();
         for i in 0..layers.len() - 1 {
             let layer = RustDenseLayer::new(
-                layers[i], 
+                layers[i],
                 layers[i + 1],
-                match activations[i] {
-                    Some("sigmoid") => RustActivation::Sigmoid,
-                    Some("linear") => RustActivation::Linear,
+                match activations[i].as_str() {
+                    "sigmoid" => RustActivation::Sigmoid,
+                    "linear" => RustActivation::Linear,
                     _ => return Err(PyValueError::new_err("Invalid activation function")),
                 }
             );
@@ -187,17 +187,19 @@ impl PyMLP {
 
         let rust_model = RustMLP::new(dense_layers, is_classification);
 
+
         Ok(PyMLP { model: rust_model })
 
     }
-    
+
     fn predict(&mut self, x: Vec<f64>) -> PyResult<Vec<f64>> {
         Ok(self.model.predict(&x))
     }
-    
-    fn fit(&mut self, x_train: Vec<Vec<f64>>, y_train: Vec<f64>, epochs: usize, lr : f64) -> PyResult<()> {
-        self.model.train(&x_train, &y_train, epochs, lr);
-        Ok(())
+
+    fn fit(&mut self, x_train: Vec<Vec<f64>>, y_train: Vec<f64>, epochs: usize, lr : f64) -> PyResult<Vec<f64>> {
+        let train_losses = self.model.train(&x_train, &y_train, epochs, lr);
+        Ok(train_losses)
+
     }
 }
 
