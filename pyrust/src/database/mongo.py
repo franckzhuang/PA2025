@@ -33,7 +33,6 @@ class MongoDB:
         self.delay = delay
         self.client = None
         self.db = self._connect_db()
-        self.collection = self.db[get_env_var("MONGO_COLLECTION", "images")]
 
     def _get_uri(self) -> str:
         host = get_env_var("MONGO_HOST", "localhost")
@@ -240,7 +239,7 @@ if __name__ == "__main__":
     load_dotenv()
 
     mongo = MongoDB()
-    coll = mongo.collection
+    coll = mongo.db["images"]
 
     label = os.getenv("IMAGE_LABEL", "real")
     source = os.getenv("IMAGE_SOURCE", "unspecified")
@@ -248,10 +247,10 @@ if __name__ == "__main__":
 
     images = ImageCollection(coll, label)
     export_file = os.getenv("EXPORT_PATH", "export.json")
-    images.export_to_file(export_file)
+    # images.export_to_file(export_file)
     images.save_folder(directory, source)
-    loaded = images.load_all()
-    for img in loaded:
-        logger.info(
-            f"{img.filename}: {img.metadata.get('size_bytes')} octets, {img.metadata.get('width')}x{img.metadata.get('height')}"
-        )
+    # loaded = images.load_all()
+    # for img in loaded:
+    #     logger.info(
+    #         f"{img.filename}: {img.metadata.get('size_bytes')} octets, {img.metadata.get('width')}x{img.metadata.get('height')}"
+    #     )

@@ -1,13 +1,11 @@
 import os
 import random
-import json
 import base64
 from enum import Enum
 from io import BytesIO
 
 from PIL import Image
 from sklearn.model_selection import train_test_split
-from pymongo import MongoClient
 
 from pyrust.src.database.mongo import get_env_var, MongoDB
 from pyrust.src.utils.logger import logger
@@ -47,7 +45,7 @@ class DataLoader:
     def load_data(config):
         loader = get_env_var("DATA_LOADER", LoaderType.LOCAL.value).lower()
         logger.info(f"Loading data using loader: %s", loader)
-        if loader == LoaderType.LOCAL:
+        if loader == LoaderType.LOCAL.value:
             return DataLoader._load_local(config)
         else:
             return DataLoader._load_mongo(config)
@@ -62,7 +60,7 @@ class DataLoader:
             {"path": config["real_images_path"], "label": 1.0, "key": "real"},
             {"path": config["ai_images_path"], "label": -1.0, "key": "ai"},
         ]
-        print("Loading images from local folders...")
+        logger.info("Loading images from local folders...")
         for source in sources:
             folder, label, key = source["path"], source["label"], source["key"]
             if not os.path.exists(folder):
@@ -90,7 +88,7 @@ class DataLoader:
     def _load_mongo(config):
         X_data, y_data, file_names_list = [], [], []
         loaded_counts = {"real": 0, "ai": 0}
-        max_per_class = config.get("max_images_per_class", 0)
+        max_per_class = config.get("max_images_per_class", 100)
         target_size = tuple(config.get("image_size", ()))
         mongodb = MongoDB()
         coll = mongodb.db["images"]
@@ -98,6 +96,7 @@ class DataLoader:
             {"label_val": "real", "label": 1.0, "key": "real"},
             {"label_val": "ai", "label": -1.0, "key": "ai"},
         ]
+        logger.info("Sources for MongoDB: %s", sources)
         for source in sources:
             label_val, label, key = source["label_val"], source["label"], source["key"]
             cursor = coll.find({"metadata.label": label_val}).limit(max_per_class)
