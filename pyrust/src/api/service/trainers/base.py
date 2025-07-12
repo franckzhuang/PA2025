@@ -1,3 +1,4 @@
+import time
 from abc import ABC, abstractmethod
 from pathlib import Path
 from datetime import datetime, timezone
@@ -15,9 +16,21 @@ class BaseTrainer(ABC):
         self.experiment_config = self._prepare_config(config)
         self.model = None
 
-    @abstractmethod
     def _prepare_config(self, config):
-        pass
+        base_config = {
+            "image_size": (
+                config.get("image_width", 32),
+                config.get("image_height", 32),
+            ),
+            "max_images_per_class": config.get("max_images_per_class", 90),
+            "real_images_path": config.get(
+                "real_images_path", f"{str(self.base_path)}/data/real"
+            ),
+            "ai_images_path": config.get(
+                "ai_images_path", f"{str(self.base_path)}/data/ai"
+            ),
+        }
+        return base_config
 
     @abstractmethod
     def _train_model(self, data):
@@ -47,10 +60,15 @@ class BaseTrainer(ABC):
                 self.job_id,
                 f"Starting training ({len(data['X_train'])} samples)...",
             )
+            training_start = time.perf_counter()
             self._train_model(data)
+            training_end = time.perf_counter()
+            training_duration = training_end - training_start
 
             log_with_job_id(logger, self.job_id, "Training finished. Evaluating...")
             metrics = self._evaluate_model(data)
+
+            metrics["training_duration"] = training_duration
 
             model_params = (
                 self.model.to_json() if hasattr(self.model, "to_json") else None
@@ -74,7 +92,6 @@ class BaseTrainer(ABC):
             return self._build_response(Status.FAILURE, error=str(e))
 
     def _load_data(self):
-        """Loads the dataset."""
         log_with_job_id(logger, self.job_id, "Loading dataset...")
         return DataLoader.load_data(self.experiment_config)
 
@@ -93,7 +110,6 @@ class BaseTrainer(ABC):
         return True
 
     def _update_status(self, status, additional_info=None):
-        """Updates the job status in the database."""
         update_doc = {"status": status.value}
         if status == Status.RUNNING:
             update_doc["started_at"] = datetime.now(timezone.utc)

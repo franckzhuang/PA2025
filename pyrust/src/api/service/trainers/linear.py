@@ -4,22 +4,14 @@ from pyrust.src.api.service.trainers.base import BaseTrainer
 
 class LinearClassificationTrainer(BaseTrainer):
     def _prepare_config(self, config):
-        return {
-            "image_size": (
-                config.get("image_width", 32),
-                config.get("image_height", 32),
-            ),
-            "max_images_per_class": config.get("max_images_per_class", 90),
-            "real_images_path": config.get(
-                "real_images_path", f"{str(self.base_path)}/data/real"
-            ),
-            "ai_images_path": config.get(
-                "ai_images_path", f"{str(self.base_path)}/data/ai"
-            ),
+        experiment_config = super()._prepare_config(config)
+
+        experiment_config.update({
             "verbose": config.get("verbose", True),
             "learning_rate": config.get("learning_rate", 0.01),
             "max_iterations": config.get("max_iterations", 1000),
-        }
+        })
+        return experiment_config
 
     def _train_model(self, data):
         self.model = mk.LinearClassification(

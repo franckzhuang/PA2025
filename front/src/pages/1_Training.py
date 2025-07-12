@@ -4,10 +4,11 @@ import json
 from datetime import datetime
 
 import streamlit as st
-import requests
 import pandas as pd
 from dotenv import load_dotenv
 import plotly.express as px
+from utils import ApiClient
+client = ApiClient()
 
 dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
 load_dotenv(dotenv_path)
@@ -16,35 +17,6 @@ API_URL = os.environ.get("API_URL", "http://localhost:8000")
 st.set_page_config(
     page_title="AI vs Real Landscape Trainer", page_icon="🏞️", layout="wide"
 )
-
-class ApiClient:
-    def __init__(self, base_url, timeout=5, max_retries=3):
-        self.base_url = base_url.rstrip('/')
-        self.session = requests.Session()
-        self.timeout = timeout
-        adapter = requests.adapters.HTTPAdapter(max_retries=max_retries)
-        self.session.mount('http://', adapter)
-        self.session.mount('https://', adapter)
-
-    def start_training(self, model_type, payload):
-        url = f"{self.base_url}/train/{model_type}"
-        resp = self.session.post(url, json=payload, timeout=self.timeout)
-        resp.raise_for_status()
-        return resp.json()["job_id"]
-
-    def get_status(self, job_id):
-        url = f"{self.base_url}/train/status/{job_id}"
-        resp = self.session.get(url, timeout=self.timeout)
-        resp.raise_for_status()
-        return resp.json()
-
-    def get_history(self):
-        url = f"{self.base_url}/train/history"
-        resp = self.session.get(url, timeout=self.timeout)
-        resp.raise_for_status()
-        return resp.json()
-
-client = ApiClient(API_URL)
 
 if "job_id" not in st.session_state:
     st.session_state.job_id = None
@@ -174,59 +146,81 @@ if st.session_state.active_polling and st.session_state.job_id:
                 if status == "SUCCESS":
                     st.session_state.active_polling = False
                     st.balloons()
-                    status_text.success("Training completed successfully!")
+                    status_text.success("✅ Training completed successfully!")
 
                     if metrics:
                         rename_map = {
-                            'total_images': 'Total Images',
-                            'real_images': 'Real Images',
-                            'ai_images': 'AI Images',
+                            'len_real_images': 'Real Images',
+                            'len_ai_images': 'AI Images',
                             'train_samples': 'Train Samples',
                             'test_samples': 'Test Samples',
                             'train_accuracy': 'Train Accuracy',
                             'test_accuracy': 'Test Accuracy'
                         }
 
-                        counts = {
-                            rename_map[k]: metrics[k]
-                            for k in ['real_images', 'ai_images']
-                            if k in metrics
-                        }
-                        samples = {
-                            rename_map[k]: metrics[k]
-                            for k in ['train_samples', 'test_samples']
-                            if k in metrics
-                        }
-                        accuracies = {
-                            rename_map[k]: metrics[k]
-                            for k in ['train_accuracy', 'test_accuracy']
-                            if k in metrics
-                        }
+                        col1, col2 = st.columns(2)
 
-                        col1, col2, col3 = st.columns(3)
                         with col1:
-                            df_counts = pd.DataFrame({'count': list(counts.values())}, index=list(counts.keys()))
-                            fig1 = px.pie(
-                                df_counts, names=df_counts.index, values='count',
-                                title='Count Distribution'
-                            )
-                            st.plotly_chart(fig1, use_container_width=True)
+                            counts = {
+                                rename_map[k]: metrics[k]
+                                for k in ['len_real_images', 'len_ai_images']
+                                if k in metrics
+                            }
+                            if counts:
+                                df_counts = pd.DataFrame({'count': list(counts.values())}, index=list(counts.keys()))
+                                fig1 = px.pie(
+                                    df_counts, names=df_counts.index, values='count',
+                                    title='📊 Image Source Distribution'
+                                )
+                                fig1.update_traces(textinfo='value+label')
+                                st.plotly_chart(fig1, use_container_width=True)
 
                         with col2:
-                            df_samples = pd.DataFrame({'count': list(samples.values())}, index=list(samples.keys()))
-                            fig2 = px.pie(
-                                df_samples, names=df_samples.index, values='count',
-                                title='Sample Distribution'
-                            )
-                            st.plotly_chart(fig2, use_container_width=True)
+                            samples = {
+                                rename_map[k]: metrics[k]
+                                for k in ['train_samples', 'test_samples']
+                                if k in metrics
+                            }
+                            if samples:
+                                df_samples = pd.DataFrame({'count': list(samples.values())}, index=list(samples.keys()))
+                                fig2 = px.pie(
+                                    df_samples, names=df_samples.index, values='count',
+                                    title='📚 Data Split Distribution'
+                                )
+                                fig2.update_traces(textinfo='value+label')
+                                st.plotly_chart(fig2, use_container_width=True)
+
+                        st.divider()
+
+                        col3, col4, col5 = st.columns(3)
+
                         with col3:
-                            df_acc = pd.DataFrame({ 'Accuracy': list(accuracies.values()) }, index=list(accuracies.keys()))
-                            st.bar_chart(df_acc)
+                            train_acc = metrics.get('train_accuracy', 0)
+                            st.metric(
+                                label="🎯 Train Accuracy",
+                                value=f"{train_acc:.2f}%"
+                            )
+
+                        with col4:
+                            test_acc = metrics.get('test_accuracy', 0)
+                            st.metric(
+                                label="🧪 Test Accuracy",
+                                value=f"{test_acc:.2f}%",
+                                help="Accuracy on unseen data. This is the most important metric."
+                            )
+
+                        with col5:
+                            duration = metrics.get('training_duration', 0)
+                            st.metric(
+                                label="⏱️ Training Duration",
+                                value=f"{duration:.2f} s",  # Formaté avec 2 décimales et l'unité
+                                help="Total time taken for the model training."
+                            )
 
                     else:
                         st.write("No metrics to display.")
 
-                    st.json(metrics)
+
                     params_export = json.loads(resp.get("params", "{}"))
                     if params_export:
                         dt = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -238,7 +232,6 @@ if st.session_state.active_polling and st.session_state.job_id:
                             mime="application/json"
                         )
                     break
-
                 if status == "FAILURE":
                     st.session_state.active_polling = False
                     err = resp.get("error", "Unknown error")
@@ -251,13 +244,3 @@ if st.session_state.active_polling and st.session_state.job_id:
                 status_text.error(f"Error polling status: {e}")
                 break
 
-with st.expander("📜 Training History", expanded=False):
-    try:
-        history = client.get_history()
-        if history:
-            df_hist = pd.DataFrame(history)
-            st.dataframe(df_hist)
-        else:
-            st.write("No history available.")
-    except Exception:
-        st.write("Unable to fetch history.")

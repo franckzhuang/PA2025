@@ -10,4 +10,4 @@ WORKDIR /app
 
 COPY src/ .
 
-CMD ["streamlit", "run", "Detector.py"]
+CMD ["streamlit", "run", "0_Detector.py"]

@@ -10,7 +10,7 @@ import concurrent.futures
 
 from pymongo import MongoClient, errors
 
-# Override MongoClient __del__ to avoid TypeError at interpreter shutdown
+# Avoid error
 MongoClient.__del__ = lambda self: None
 
 from pymongo.database import Database
@@ -246,7 +246,7 @@ if __name__ == "__main__":
     directory = os.getenv("IMAGE_DIR", "../data/real")
 
     images = ImageCollection(coll, label)
-    export_file = os.getenv("EXPORT_PATH", "export.json")
+    # export_file = os.getenv("EXPORT_PATH", "export.json")
     # images.export_to_file(export_file)
     images.save_folder(directory, source)
     # loaded = images.load_all()

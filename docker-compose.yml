@@ -38,15 +38,15 @@ services:
     volumes:
       - ./pyrust/src/data:/app/data
 
-  agid:
+  front:
     build:
-      context: agid-app
+      context: front
       dockerfile: Dockerfile
-    container_name: agid
+    container_name: front
     ports:
       - "8501:8501"
     volumes:
-      - ./agid-app/src:/app/src
+      - ./front/src:/app/src
     environment:
       API_URL: ${API_URL}
 
