@@ -1,13 +1,15 @@
 use osqp::{CscMatrix, Problem, Settings}; // QP solver for dual optimization
 use std::f64::INFINITY;
+use serde::{Deserialize, Serialize};
 
 /// Kernel
-#[derive(Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum KernelType {
     Linear, // kernel type | 'linear' or 'rbf'
     RBF(f64), // RBF kernel parameter
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct SVM {
     pub c: Option<f64>,              // regularization | None -> hard margin | >0 -> soft margin
     pub kernel: KernelType,          // kernel type | 'linear' or 'rbf'

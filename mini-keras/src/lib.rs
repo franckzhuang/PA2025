@@ -26,8 +26,6 @@ use crate::mlp::Dense as RustDenseLayer;
 use crate::mlp::Activation as RustActivation;
 use crate::mlp::MLP as RustMLP;
 use crate::svm::{SVM as RustSVM, KernelType};
-
-
 use crate::rbf_naive::RBFNaive as RustRBFNaive;
 use crate::rbf::RBFKMeans as RustRBFKmeans;
 
@@ -187,7 +185,6 @@ impl PyMLP {
 
         let rust_model = RustMLP::new(dense_layers, is_classification);
 
-
         Ok(PyMLP { model: rust_model })
 
     }
@@ -200,6 +197,18 @@ impl PyMLP {
         let train_losses = self.model.train(&x_train, &y_train, epochs, lr);
         Ok(train_losses)
 
+    }
+
+    fn to_json(&self) -> PyResult<String> {
+        serde_json::to_string_pretty(&self.model)
+            .map_err(|e| PyValueError::new_err(e.to_string()))
+    }
+
+    #[staticmethod]
+    fn from_json(json_str: String) -> PyResult<Self> {
+        let model: RustMLP = serde_json::from_str(&json_str)
+            .map_err(|e| PyValueError::new_err(e.to_string()))?;
+        Ok(PyMLP { model })
     }
 }
 
