@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import streamlit as st
 import base64
 from PIL import Image
@@ -5,7 +7,8 @@ from io import BytesIO
 
 
 def inject_styles():
-    with open("agid-app/styles.css", "r") as f:
+    base_path = Path(__file__).parent
+    with open(f"{base_path}/styles.css", "r") as f:
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
 

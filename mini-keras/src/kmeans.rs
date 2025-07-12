@@ -1,7 +1,7 @@
 
 use rand::prelude::IndexedRandom;
 
-
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Kmeans {
     pub num_clusters: usize,
     pub num_iterations: usize,

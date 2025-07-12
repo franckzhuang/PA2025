@@ -1,5 +1,7 @@
+use serde::{Deserialize, Serialize};
 use crate::utils;
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct LinearModelGradientDescent {
     pub weights: Vec<f64>,
     pub bias: f64,
