@@ -28,4 +28,6 @@ Take an image as an input and predict wether it is AI generated or not.
 Launch API from project root directory:
 ```bash
 uv run uvicorn pyrust.src.api.app:app --host 0.0.0.0 --port 8000 --reload
+
+# uvicorn pyrust.src.api.app:app --host 0.0.0.0 --port 8000 --reload
 ```

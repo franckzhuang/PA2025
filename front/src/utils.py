@@ -1,5 +1,3 @@
-# Fichier: utils.py
-
 import os
 import requests
 from dotenv import load_dotenv
@@ -35,5 +33,22 @@ class ApiClient:
     def get_history(self):
         url = f"{self.base_url}/train/history"
         resp = self.session.get(url, timeout=self.timeout)
+        resp.raise_for_status()
+        return resp.json()
+    
+    def get_models(self):
+        url = f"{self.base_url}/evaluate/models"
+        resp = self.session.get(url, timeout=self.timeout)
+        resp.raise_for_status()
+        return resp.json()
+
+    def evaluate_model(self, model_type, model_name, input_data):
+        url = f"{self.base_url}/evaluate/run"
+        payload = {
+            "model_type": model_type,
+            "model_name": model_name,
+            "input_data": input_data
+        }
+        resp = self.session.post(url, json=payload, timeout=self.timeout)
         resp.raise_for_status()
         return resp.json()

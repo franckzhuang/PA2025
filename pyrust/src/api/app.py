@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from pyrust.src.api.controllers import training
+from pyrust.src.api.controllers import evaluating
 
 app = FastAPI(
     title="Training API",
@@ -8,6 +9,7 @@ app = FastAPI(
 )
 
 app.include_router(training.router)
+app.include_router(evaluating.router)
 
 
 @app.get("/", tags=["Root"])
