@@ -1,4 +1,5 @@
 use std::f64;
+use serde::{Serialize, Deserialize};
 use rand::Rng;
 
 /// returns a random f64 in [-1.0, 1.0]
@@ -8,10 +9,13 @@ fn random() -> f64 {
 }
 
 /// A single perceptron (neuron) with weights, bias, and cached state
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Perceptron {
     weights: Vec<f64>,
     bias: f64,
+    #[serde(skip)]
     last_inputs: Vec<f64>,
+    #[serde(skip)]
     last_z: f64,
 }
 
@@ -51,15 +55,20 @@ impl Perceptron {
 }
 
 /// A fully-connected layer consisting of multiple perceptrons
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Dense {
     neurons: Vec<Perceptron>,
     activation: Activation,
+    #[serde(skip)]
     last_inputs: Vec<f64>,
+    #[serde(skip)]
     last_zs: Vec<f64>,
+    #[serde(skip)]
     last_activations: Vec<f64>,
 }
 
 /// Supported activation functions
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum Activation {
     Sigmoid,
     Linear,
@@ -133,6 +142,7 @@ impl Dense {
 }
 
 /// A simple multi-layer perceptron
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct MLP {
     layers: Vec<Dense>,
     is_classification: bool,
