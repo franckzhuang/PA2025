@@ -1,6 +1,9 @@
 import streamlit as st
-from logic import detect_ai
-from ui import display_uploaded_image, render_detection_result, inject_styles
+import numpy as np
+from PIL import Image
+from utils import ApiClient
+
+client = ApiClient()
 
 st.set_page_config(
     page_title="AGID - Anti Generated Image Detection",
@@ -8,31 +11,71 @@ st.set_page_config(
     page_icon="🔎"
 )
 
-inject_styles()
+st.title("🔎 AGID")
+st.subheader("Anti Generated Image Detection")
+st.divider()
 
-_, col1, _, col2, _ = st.columns([1, 6, 1, 6, 1])
+with st.sidebar:
+    st.header("Settings")
 
-with col1:
-    with st.container():
-        st.markdown("<div class='upload-box'>", unsafe_allow_html=True)
-        uploaded_file = st.file_uploader(
-            "Upload an image", type=["png", "jpg", "jpeg"], label_visibility="collapsed")
-        image = display_uploaded_image(uploaded_file)
-        st.markdown("</div>", unsafe_allow_html=True)
+    models = client.get_models()
+    if not models:
+        st.error("No models available.")
+        st.stop()
 
-with col2:
-    st.title("🔎 AGID")
-    st.subheader("Anti Generated Image Detection")
-    st.markdown("""
-    Upload an image and press the detection button below to check if it's likely **AI-generated** or **Real photos**.
-    """)
+    model_type = st.selectbox("Model Type", list(models.keys()))
+    model_name = st.selectbox("Model Name", models[model_type])
 
-    if 'result' not in st.session_state:
-        st.session_state.result = None
+    uploaded_file = st.file_uploader(
+        "Upload an image",
+        type=["png", "jpg", "jpeg"]
+    )
 
-    detect = st.button("🚀 Run Detection", disabled=uploaded_file is None)
-    if detect and uploaded_file:
-        st.session_state.result = detect_ai()
+    detect_btn = st.button("Run Detection")
 
-    if st.session_state.result is not None:
-        render_detection_result(st.session_state.result)
+if uploaded_file:
+    img = Image.open(uploaded_file).convert("RGB")
+
+    max_height = 600
+    if img.height > max_height:
+        ratio = max_height / img.height
+        new_size = (int(img.width * ratio), max_height)
+        img_display = img.resize(new_size)
+    else:
+        img_display = img
+
+    _, center_col, _ = st.columns([1, 2, 1])
+
+    with center_col:
+        result_placeholder = st.empty()
+
+        st.image(
+            img_display,
+            caption="Uploaded Image Preview",
+            output_format="PNG"
+        )
+
+        if detect_btn:
+            with st.spinner("Evaluating..."):
+                try:
+                    result = client.evaluate_model(
+                        model_type=model_type,
+                        model_name=model_name,
+                        input_data=np.array(img.resize((32, 32))).flatten().tolist()
+                    )
+                    pred = result.get("prediction")
+                    score = float(pred[0]) if isinstance(pred, list) else float(pred)
+
+                    if score >= 0.5:
+                        result_placeholder.error("🤖 This image is likely AI-generated.")
+                        st.toast("Detected as AI-generated", icon="🤖")
+                    else:
+                        result_placeholder.success("✅ This looks like a real photo.")
+                        st.toast("Detected as real photo", icon="✅")
+                        st.balloons()
+                except Exception as e:
+                    result_placeholder.error(f"Error during evaluation: {e}")
+
+else:
+    if detect_btn:
+        st.warning("Please upload an image before running detection.")

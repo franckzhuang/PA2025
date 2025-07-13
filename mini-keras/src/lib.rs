@@ -17,7 +17,7 @@ mod rbf_naive;
 mod rbf;
 
 use crate::linear_model_gradient::LinearModelGradientDescent as RustLinearModelGradient;
-use crate::linear_model::LinearRegression as RustLinearRegression;
+// use crate::linear_model::LinearRegression as RustLinearRegression;
 use crate::linear_model::LinearClassification as RustLinearClassification;
 
 
@@ -67,52 +67,52 @@ impl PyRBFKMeans {
 }
 
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[pyclass(name = "LinearRegression")]
-pub struct PyLinearRegression {
-    model: RustLinearRegression,
-}
+// #[derive(Serialize, Deserialize, Debug, Clone)]
+// #[pyclass(name = "LinearRegression")]
+// pub struct PyLinearRegression {
+//     model: RustLinearRegression,
+// }
 
-#[pymethods]
-impl PyLinearRegression {
-    #[new]
-    fn new() -> PyResult<Self> {
-        Ok(PyLinearRegression { model: RustLinearRegression::new() })
-    }
+// #[pymethods]
+// impl PyLinearRegression {
+//     #[new]
+//     fn new() -> PyResult<Self> {
+//         Ok(PyLinearRegression { model: RustLinearRegression::new() })
+//     }
 
 
-    fn fit(&mut self, x_train: Vec<Vec<f64>>, y_train: Vec<f64>) -> PyResult<()> {
-        self.model.fit(&x_train, &y_train);
-        Ok(())
-    }
-    fn predict(&self, x: Vec<f64>) -> PyResult<f64> {
-        Ok(self.model.predict(&x))
-    }
+//     fn fit(&mut self, x_train: Vec<Vec<f64>>, y_train: Vec<f64>) -> PyResult<()> {
+//         self.model.fit(&x_train, &y_train);
+//         Ok(())
+//     }
+//     fn predict(&self, x: Vec<f64>) -> PyResult<f64> {
+//         Ok(self.model.predict(&x))
+//     }
 
-    // fn predict_many(&self, x: Vec<Vec<f64>>) -> PyResult<Vec<f64>> {
-    //     Ok(x.iter().map(|sample| self.model.predict(sample)).collect())
-    // }
+//     // fn predict_many(&self, x: Vec<Vec<f64>>) -> PyResult<Vec<f64>> {
+//     //     Ok(x.iter().map(|sample| self.model.predict(sample)).collect())
+//     // }
 
-    fn get_weights(&self) -> PyResult<Vec<f64>> {
-        Ok(self.model.weights.clone().unwrap_or_default())
-    }
+//     fn get_weights(&self) -> PyResult<Vec<f64>> {
+//         Ok(self.model.weights.clone().unwrap_or_default())
+//     }
 
-    fn get_bias(&self) -> PyResult<f64> {
-        Ok(self.model.bias.unwrap_or(0.0))
-    }
+//     fn get_bias(&self) -> PyResult<f64> {
+//         Ok(self.model.bias.unwrap_or(0.0))
+//     }
 
-    fn save(&self, path: String) -> PyResult<()> {
-        self.model.save_json(&path)
-            .map_err(|e| pyo3::exceptions::PyIOError::new_err(e.to_string()))
-    }
+//     fn save(&self, path: String) -> PyResult<()> {
+//         self.model.save_json(&path)
+//             .map_err(|e| pyo3::exceptions::PyIOError::new_err(e.to_string()))
+//     }
 
-    #[staticmethod]
-    fn load(path: String) -> PyResult<Self> {
-        let model = RustLinearRegression::load_json(&path)
-            .map_err(|e| pyo3::exceptions::PyIOError::new_err(e.to_string()))?;
-        Ok(PyLinearRegression { model })
-    }
-}
+//     #[staticmethod]
+//     fn load(path: String) -> PyResult<Self> {
+//         let model = RustLinearRegression::load_json(&path)
+//             .map_err(|e| pyo3::exceptions::PyIOError::new_err(e.to_string()))?;
+//         Ok(PyLinearRegression { model })
+//     }
+// }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[pyclass(name = "LinearClassification")]
@@ -296,13 +296,25 @@ impl PySVM {
         self.model.weights()
     }
 
+    fn to_json(&self) -> PyResult<String> {
+        serde_json::to_string_pretty(&self.model)
+            .map_err(|e| PyValueError::new_err(e.to_string()))
+    }
+
+    #[staticmethod]
+    fn from_json(json_str: String) -> PyResult<Self> {
+        let model: RustSVM = serde_json::from_str(&json_str)
+            .map_err(|e| PyValueError::new_err(e.to_string()))?;
+        Ok(PySVM { model })
+    }
+
 }
 
 #[pymodule]
 fn mini_keras(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyLinearModelGradient>()?;
     m.add_class::<PyMLP>()?;
-    m.add_class::<PyLinearRegression>()?;
+    // m.add_class::<PyLinearRegression>()?;
     m.add_class::<PyLinearClassification>()?;
     m.add_class::<PySVM>()?;
     m.add_class::<PyRBFNaive>()?;
