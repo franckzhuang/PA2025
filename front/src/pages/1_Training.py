@@ -225,6 +225,7 @@ if st.session_state.active_polling and st.session_state.job_id:
                             file_name=fname,
                             mime="application/json"
                         )
+                        st.info("💡 If you want to save this model to the database, please go to the **History** page.")
                     break
                 if status == "FAILURE":
                     st.session_state.active_polling = False

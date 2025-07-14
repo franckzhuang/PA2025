@@ -2,8 +2,6 @@ import os
 import requests
 from dotenv import load_dotenv
 
-# Charger les variables d'environnement
-# Le chemin est relatif à l'endroit où le script est exécuté
 load_dotenv()
 API_URL = os.environ.get("API_URL", "http://localhost:8000")
 
@@ -49,6 +47,18 @@ class ApiClient:
             "model_name": model_name,
             "input_data": input_data
         }
+        resp = self.session.post(url, json=payload, timeout=10)
+        resp.raise_for_status()
+        return resp.json()
+
+        
+    def save_model(self, job_id, name):
+        url = f"{self.base_url}/evaluate/save_model"
+        payload = {
+            "job_id": job_id,
+            "name": name
+        }
         resp = self.session.post(url, json=payload, timeout=self.timeout)
         resp.raise_for_status()
         return resp.json()
+
