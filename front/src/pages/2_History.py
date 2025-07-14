@@ -73,40 +73,79 @@ try:
             job_ids = filtered_df['job_id'].tolist()
             selected_job_id = st.selectbox("Select a Job ID to see full details", options=job_ids)
 
-            if selected_job_id:
-                job_details_row = filtered_df[filtered_df['job_id'] == selected_job_id].iloc[0]
+        if selected_job_id:
+            job_details_row = filtered_df[filtered_df['job_id'] == selected_job_id].iloc[0]
 
-                if 'params' in job_details_row and pd.notna(job_details_row['params']):
+            if 'params' in job_details_row and pd.notna(job_details_row['params']):
+                model_type = job_details_row.get('model_type', 'model')
+                date_str = pd.to_datetime(job_details_row.get('created_at')).strftime('%Y%m%d_%H%M%S')
+                file_name = f"{date_str}_{model_type}_params.json"
 
-                    model_type = job_details_row.get('model_type', 'model')
-                    date_str = pd.to_datetime(job_details_row.get('created_at')).strftime('%Y%m%d_%H%M%S')
-                    file_name = f"{date_str}_{model_type}_params.json"
+                params_data = job_details_row['params']
+                if not isinstance(params_data, str):
+                    params_data = json.dumps(params_data, indent=2)
 
-                    params_data = job_details_row['params']
-                    if not isinstance(params_data, str):
-                        params_data = json.dumps(params_data, indent=2)
+                st.download_button(
+                    label="📥 Download Model Params",
+                    data=params_data.encode('utf-8'),
+                    file_name=file_name,
+                    mime="application/json"
+                )
+            else:
+                st.info("No downloadable parameters for this run.")
 
-                    st.download_button(
-                        label="📥 Download Model Params",
-                        data=params_data.encode('utf-8'),
-                        file_name=file_name,
-                        mime="application/json"
-                    )
-                else:
-                    st.info("No downloadable parameters for this run.")
+            st.subheader("💾 Save Model to Database")
 
-                st.divider()
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.subheader("⚙️ Configuration")
-                    config_data = {k.replace('config.', ''): v for k, v in job_details_row.to_dict().items() if
-                                   'config.' in k}
-                    st.json(config_data)
-                with col2:
-                    st.subheader("📈 Metrics")
-                    metrics_data = {k.replace('metrics.', ''): v for k, v in job_details_row.to_dict().items() if
-                                    'metrics.' in k}
-                    st.json(metrics_data)
+            if 'params' not in job_details_row or not pd.notna(job_details_row['params']):
+                st.info("Model can only be saved if the job is completed.")
+            else:
+                model_name_input = st.text_input("Model Name", key="model_name_input")
+
+                if st.button("✅ Save Model"):
+                    if not model_name_input.strip():
+                        st.error("Please enter a model name before saving.")
+                    else:
+                        try:
+                            response = client.save_model(
+                                job_id=selected_job_id,
+                                name=model_name_input.strip()
+                            )
+
+                            if response.get("status") == "created":
+                                st.success("Model saved successfully! 🎉")
+                                st.balloons()
+                            elif response.get("status") == "exists":
+                                st.warning("A model with this name already exists.")
+                            elif response.get("status") == "not_found":
+                                st.error("The associated training job was not found.")
+                            elif response.get("status") == "error":
+                                st.error(f"Error saving model: {response.get('message')}")
+                            else:
+                                st.error(f"Unexpected response: {response}")
+                        except Exception as e:
+                            st.error(f"Failed to save model: {e}")
+
+
+            st.divider()
+
+            col1, col2 = st.columns(2)
+            with col1:
+                st.subheader("⚙️ Configuration")
+                config_data = {
+                    k.replace('config.', ''): v
+                    for k, v in job_details_row.to_dict().items()
+                    if 'config.' in k
+                }
+                st.json(config_data)
+            with col2:
+                st.subheader("📈 Metrics")
+                metrics_data = {
+                    k.replace('metrics.', ''): v
+                    for k, v in job_details_row.to_dict().items()
+                    if 'metrics.' in k
+                }
+                st.json(metrics_data)
+
 
 except Exception as e:
     st.error(f"Failed to fetch or display history: {e}")
