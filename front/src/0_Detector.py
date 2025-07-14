@@ -58,6 +58,13 @@ if uploaded_file:
         if detect_btn:
             with st.spinner("Evaluating..."):
                 try:
+                    # st.write("🔍 Payload :", {
+                    #     "model_type": model_type,
+                    #     "model_name": model_name,
+                    #     "input_data": (np.array(img.resize((32, 32))).astype(np.float32) / 255.0).flatten().tolist()[:10],  # Affiche juste les 10 premiers éléments
+                    #     "total_length": len((np.array(img.resize((32, 32))).astype(np.float32) / 255.0).flatten().tolist())
+                    # })
+                    
                     result = client.evaluate_model(
                         model_type=model_type,
                         model_name=model_name,

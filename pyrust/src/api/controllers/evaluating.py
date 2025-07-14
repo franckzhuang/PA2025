@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from pymongo.collection import Collection
 import os
+from datetime import datetime
 from pymongo.errors import PyMongoError
 
 from pyrust.src.api.service.evaluators.linear import evaluate_linear
@@ -10,9 +11,6 @@ from pyrust.src.api.service.evaluators.svm import evaluate_svm
 from pyrust.src.database.mongo import MongoDB
 
 router = APIRouter()
- 
-HERE = os.path.dirname(os.path.abspath(__file__))
-MODELS_FOLDER = os.path.join(HERE, "models")
 
 class EvaluateRequest(BaseModel):
     model_type: str
@@ -27,51 +25,58 @@ def get_saved_models_collection() -> Collection:
     mongo = MongoDB()
     return mongo.db["saved_models"]
 
+def get_training_jobs_collection():
+    mongo = MongoDB()
+    return mongo.db["training_jobs"]
+
 @router.get("/evaluate/models")
-def get_all_models():
-    if not os.path.exists(MODELS_FOLDER):
-        print("Models folder does not exist.")
-        return {}
-
-    model_types = {
-        "linear": "LinearClassification",
-        "mlp": "MLP",
-        "svm": "SVM"
-    }
-
-    models = {v: [] for v in model_types.values()}
-
-    for filename in os.listdir(MODELS_FOLDER):
-        if filename.endswith(".json"):
-            lower_name = filename.lower()
-            for key, type_name in model_types.items():
-                if key in lower_name:
-                    name = os.path.splitext(filename)[0]
-                    models[type_name].append(name)
-                    break
-
-    return {k: v for k, v in models.items() if v}
+def get_all_models(collection=Depends(get_saved_models_collection)):
+    models_cursor = collection.find()
+    models = {}
+    for doc in models_cursor:
+        mtype = doc.get("model_type")
+        if mtype not in models:
+            models[mtype] = []
+        models[mtype].append(doc["name"])
+    return models
 
 
 @router.post("/evaluate/run")
-def evaluate_model(req: EvaluateRequest):
-    model_path = os.path.join(MODELS_FOLDER, f"{req.model_name}.json")
-    if not os.path.exists(model_path):
-        raise HTTPException(status_code=404, detail="Model file not found.")
+def evaluate_model(
+    req: EvaluateRequest,
+    saved_models=Depends(get_saved_models_collection),
+    training_jobs=Depends(get_training_jobs_collection)
+):
+    model_doc = saved_models.find_one({"name": req.model_name})
+    if not model_doc:
+        raise HTTPException(status_code=404, detail="Model not found in saved_models.")
+    
+    stored_type = model_doc.get("model_type")
+    if not stored_type:
+        raise HTTPException(status_code=400, detail="Model type not stored in saved_models.")
+    
+    if stored_type != req.model_type:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Model type mismatch. Requested: {req.model_type}, Stored: {stored_type}"
+        )
 
-    with open(model_path, "r") as f:
-        json_str = f.read()
+    job_doc = training_jobs.find_one({"job_id": model_doc["job_id"]})
+    if not job_doc:
+        raise HTTPException(status_code=404, detail="Training job not found.")
 
-    if req.model_type == "LinearClassification":
-        return evaluate_linear(json_str, req.input_data)
+    params = job_doc.get("params")
+    if not params:
+        raise HTTPException(status_code=404, detail="No params found for this job.")
 
-    if req.model_type == "MLP":
-        return evaluate_mlp(json_str, req.input_data)
+    if stored_type == "LINEAR":
+        return evaluate_linear(params, req.input_data)
+    elif stored_type == "MLP":
+        return evaluate_mlp(params, req.input_data)
+    elif stored_type == "SVM":
+        return evaluate_svm(params, req.input_data)
 
-    if req.model_type == "SVM":
-        return evaluate_svm(json_str, req.input_data)
-
-    raise HTTPException(status_code=400, detail="Invalid model type.")
+    raise HTTPException(status_code=400, detail=f"Invalid model type: {stored_type}")
 
 @router.get("/evaluate/saved_models")
 def get_saved_models(collection=Depends(get_saved_models_collection)):
@@ -104,10 +109,14 @@ def save_model(request: SaveModelRequest):
             "message": "Training job not found."
         }
 
+    model_type = job_doc.get("model_type", "Unknown")
+
     try:
         result = collection.insert_one({
             "name": request.name,
-            "job_id": request.job_id
+            "job_id": request.job_id,
+            "model_type": model_type,
+            "created_at": datetime.utcnow()
         })
         return {
             "status": "created",
