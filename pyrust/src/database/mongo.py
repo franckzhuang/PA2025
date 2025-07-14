@@ -16,15 +16,9 @@ MongoClient.__del__ = lambda self: None
 from pymongo.database import Database
 from bson import Binary
 from PIL import Image as PILImage
+
+from pyrust.src.utils.env import get_env_var
 from pyrust.src.utils.logger import logger
-
-
-def get_env_var(name: str, default: str = None) -> str:
-    value = os.environ.get(name, default)
-    if value is None:
-        logger.error(f"Environment variable '{name}' not set and no default provided")
-        raise ValueError(f"{name} environment variable not set and no default provided")
-    return value
 
 
 class MongoDB:
@@ -144,10 +138,10 @@ class Image:
 
 
 class ImageCollection:
-    def __init__(self, collection, label: str, max_workers: int = 8):
+    def __init__(self, collection, label: str):
         self.collection = collection
         self.label = label
-        self.max_workers = max_workers
+        self.max_workers = int(get_env_var("MAX_WORKERS", None))
 
     def load_all(self) -> List[Image]:
         logger.info(f"Listing images with label '{self.label}'")

@@ -1,15 +1,19 @@
 import os
 import random
 import base64
+from concurrent.futures import ProcessPoolExecutor
 from enum import Enum
 from io import BytesIO
 
+import numpy as np
 from PIL import Image
 from sklearn.model_selection import train_test_split
 
-from pyrust.src.database.mongo import get_env_var, MongoDB
+from pyrust.src.database.mongo import MongoDB
+from pyrust.src.utils.env import get_env_var
 from pyrust.src.utils.logger import logger
 
+MAX_WORKERS = int(get_env_var("MAX_WORKERS", None))
 
 class LoaderType(Enum):
     LOCAL = "local"
@@ -20,23 +24,28 @@ class ImageUtils:
     @staticmethod
     def preprocess_image(image_path, target_size):
         try:
-            img = Image.open(image_path).convert("RGB")
-            img = img.resize(target_size)
-            pixel_values = list(img.getdata())
-            return [c / 255.0 for pixel in pixel_values for c in pixel]
+            img = Image.open(image_path).convert("RGB").resize(target_size)
+            # Conversion en tableau numpy et normalisation
+            img_array = np.array(img, dtype=np.float32) / 255.0
+            # Aplatir le tableau et le convertir en liste
+            return img_array.flatten().tolist()
         except Exception as e:
-            print(f"Error while preprocessing image '{image_path}': {e}")
+            logger.error(f"Error processing '{image_path}': {e}")
             return None
+
+    @staticmethod
+    def preprocess_image_wrapper(args):
+        path, target_size = args
+        return ImageUtils.preprocess_image(path, target_size)
 
     @staticmethod
     def preprocess_bytes(image_bytes, target_size):
         try:
-            img = Image.open(BytesIO(image_bytes)).convert("RGB")
-            img = img.resize(target_size)
-            pixel_values = list(img.getdata())
-            return [c / 255.0 for pixel in pixel_values for c in pixel]
+            img = Image.open(BytesIO(image_bytes)).convert("RGB").resize(target_size)
+            img_array = np.array(img, dtype=np.float32) / 255.0
+            return img_array.flatten().tolist()
         except Exception as e:
-            print(f"Error while preprocessing image bytes: {e}")
+            logger.error(f"Error processing image bytes: {e}")
             return None
 
 
@@ -60,28 +69,39 @@ class DataLoader:
             {"path": config["real_images_path"], "label": 1.0, "key": "real"},
             {"path": config["ai_images_path"], "label": -1.0, "key": "ai"},
         ]
-        logger.info("Loading images from local folders...")
+
+        tasks = []
+        task_info = {}
+
+        logger.info("Preparing image processing tasks...")
         for source in sources:
             folder, label, key = source["path"], source["label"], source["key"]
             if not os.path.exists(folder):
-                print(f"Folder '{folder}' not found.")
+                logger.warning(f"Folder '{folder}' not found.")
                 continue
-            files = os.listdir(folder)
-            random.shuffle(files)
-            count = 0
-            for fname in files:
-                if count >= max_per_class:
-                    break
-                if fname.lower().endswith((".png", ".jpg", ".jpeg")):
-                    path = os.path.join(folder, fname)
-                    features = ImageUtils.preprocess_image(path, target_size)
-                    if features:
-                        X_data.append(features)
-                        y_data.append(label)
-                        file_names_list.append(fname)
-                        count += 1
-            loaded_counts[key] = count
-            logger.info(f"{count} images loaded from '{folder}' (label={label}).")
+
+            all_files = [f for f in os.listdir(folder) if f.lower().endswith((".png", ".jpg", ".jpeg"))]
+            files_to_process = random.sample(all_files, min(len(all_files), max_per_class))
+
+            for fname in files_to_process:
+                path = os.path.join(folder, fname)
+                tasks.append((path, target_size))
+                task_info[path] = {"label": label, "fname": fname, "key": key}
+
+        logger.info(f"Processing {len(tasks)} images in parallel...")
+        with ProcessPoolExecutor() as executor:
+            results = executor.map(ImageUtils.preprocess_image_wrapper, tasks)
+
+        for task_args, features in zip(tasks, results):
+            if features:
+                path = task_args[0]
+                info = task_info[path]
+                X_data.append(features)
+                y_data.append(info["label"])
+                file_names_list.append(info["fname"])
+                loaded_counts[info["key"]] += 1
+
+        logger.info(f"Loaded counts: {loaded_counts}")
         return DataLoader._prepare_split(X_data, y_data, file_names_list, loaded_counts)
 
     @staticmethod
