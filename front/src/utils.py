@@ -62,3 +62,9 @@ class ApiClient:
         resp.raise_for_status()
         return resp.json()
 
+    def get_model_details(self, model_name: str):
+        res = requests.get(f"{self.base_url}/models/details/{model_name}")
+        if res.status_code == 200:
+            return res.json()
+        else:
+            raise Exception(f"Failed to get model details: {res.text}")

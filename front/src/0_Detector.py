@@ -15,6 +15,7 @@ st.title("🔎 AGID")
 st.subheader("Anti Generated Image Detection")
 st.divider()
 
+# Sidebar
 with st.sidebar:
     st.header("Settings")
 
@@ -26,12 +27,38 @@ with st.sidebar:
     model_type = st.selectbox("Model Type", list(models.keys()))
     model_name = st.selectbox("Model Name", models[model_type])
 
+    show_details_btn = st.button("Show Model Details")
+
     uploaded_file = st.file_uploader(
         "Upload an image",
         type=["png", "jpg", "jpeg"]
     )
 
-    detect_btn = st.button("Run Detection")
+    detect_btn = st.button("🚀 Run Detection")
+
+@st.dialog(f"Model Details", width ="large")
+def show_model_details():
+    with st.spinner("Fetching model details..."):
+        try:
+            details = client.get_model_details(model_name)
+
+            st.write("## General Information")
+            st.write(f"**Model Name:** {details.get('model_name')}")
+            st.write(f"**Model Type:** {details.get('model_type')}")
+            st.write(f"**Created At:** {details.get('created_at')}")
+
+            st.divider()
+            st.write("## Job Configuration")
+            st.json(details.get("job", {}).get("config"))
+
+            st.write("## Model Parameters")
+            st.json(details.get("job", {}).get("params"))
+
+        except Exception as e:
+            st.error(f"Error fetching model details: {e}")
+
+if show_details_btn:
+    show_model_details()
 
 if uploaded_file:
     img = Image.open(uploaded_file).convert("RGB")
@@ -58,17 +85,10 @@ if uploaded_file:
         if detect_btn:
             with st.spinner("Evaluating..."):
                 try:
-                    # st.write("🔍 Payload :", {
-                    #     "model_type": model_type,
-                    #     "model_name": model_name,
-                    #     "input_data": (np.array(img.resize((32, 32))).astype(np.float32) / 255.0).flatten().tolist()[:10],  # Affiche juste les 10 premiers éléments
-                    #     "total_length": len((np.array(img.resize((32, 32))).astype(np.float32) / 255.0).flatten().tolist())
-                    # })
-                    
                     result = client.evaluate_model(
                         model_type=model_type,
                         model_name=model_name,
-                        input_data = (np.array(img.resize((32, 32))).astype(np.float32) / 255.0).flatten().tolist()
+                        input_data=(np.array(img.resize((32, 32))).astype(np.float32) / 255.0).flatten().tolist()
                     )
                     pred = result.get("prediction")
                     score = float(pred[0]) if isinstance(pred, list) else float(pred)
