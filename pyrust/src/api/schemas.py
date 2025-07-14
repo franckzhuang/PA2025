@@ -3,6 +3,7 @@ from datetime import datetime
 from bson import ObjectId
 from pydantic import BaseModel, ConfigDict, Field
 from typing import List, Tuple, Dict, Any
+from typing import Optional
 
 
 # Training
@@ -21,6 +22,7 @@ class LinearClassificationParams(ImageClassificationParams):
 class SVMParams(ImageClassificationParams):
     C: float = 1.0
     kernel: str = "rbf"
+    gamma: Optional[float] = None
 
 
 class MLPParams(ImageClassificationParams):

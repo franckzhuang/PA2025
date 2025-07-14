@@ -6,6 +6,7 @@ import logging
 from pyrust.src.api.models import Status
 from pyrust.src.utils.data_loader import DataLoader
 from pyrust.src.utils.logger import logger, log_with_job_id
+import numpy as np
 
 
 class BaseTrainer(ABC):
