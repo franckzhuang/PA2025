@@ -47,6 +47,7 @@ services:
       - "8501:8501"
     volumes:
       - ./front/src:/app/src
+      - ./pyrust/src/data:/app/data
     environment:
       API_URL: ${API_URL}
 

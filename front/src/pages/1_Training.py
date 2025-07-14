@@ -42,9 +42,6 @@ with st.sidebar:
         img_h = st.number_input(
             "Image height", min_value=16, max_value=1024, value=32, step=1
         )
-        upload_files = st.file_uploader(
-            "Optional: Upload custom dataset (ZIP)", type=["zip"], accept_multiple_files=False
-        )
 
     with st.expander("2. Model Hyperparameters", expanded=True):
         model_type = st.selectbox(
@@ -59,10 +56,10 @@ with st.sidebar:
         if model_type == "linear_classification":
             params.update({
                 "learning_rate": st.number_input(
-                    "Learning Rate", min_value=1e-4, max_value=1.0, value=0.01, format="%.4f"
+                    "Learning Rate", min_value=1e-4, max_value=1.0, value=0.01,
                 ),
                 "max_iterations": st.number_input(
-                    "Max Iterations", min_value=1, max_value=10000, value=1000, step=1
+                    "Max Iterations", min_value=1, max_value=100000, value=1000, step=1
                 ),
             })
         elif model_type == "svm":
@@ -104,9 +101,6 @@ if start_btn:
     payload = params.copy()
     if model_type == "mlp":
         payload["hidden_layer_sizes"] = [int(x) for x in params["hidden_layer_sizes"].split(",") if x.strip().isdigit()]
-    if upload_files:
-        # TODO: To implement
-        st.warning("Custom dataset upload is not yet implemented.")
 
     try:
         st.session_state.job_id = client.start_training(model_type, payload)
@@ -213,7 +207,7 @@ if st.session_state.active_polling and st.session_state.job_id:
                             duration = metrics.get('training_duration', 0)
                             st.metric(
                                 label="⏱️ Training Duration",
-                                value=f"{duration:.2f} s",  # Formaté avec 2 décimales et l'unité
+                                value=f"{duration:.2f} s",
                                 help="Total time taken for the model training."
                             )
 
