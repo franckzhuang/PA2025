@@ -71,6 +71,7 @@ class Metrics(BaseModel):
     len_real_images: int
     len_ai_images: int
     total_images: int
+    training_duration: float | None = None
 
 
 class TrainingHistory(BaseModel):
