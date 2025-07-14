@@ -1,10 +1,13 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
+from pymongo.collection import Collection
 import os
+from pymongo.errors import PyMongoError
 
 from pyrust.src.api.service.evaluators.linear import evaluate_linear
 from pyrust.src.api.service.evaluators.mlp import evaluate_mlp
 from pyrust.src.api.service.evaluators.svm import evaluate_svm
+from pyrust.src.database.mongo import MongoDB
 
 router = APIRouter()
  
@@ -16,6 +19,13 @@ class EvaluateRequest(BaseModel):
     model_name: str
     input_data: list[float]
 
+class SaveModelRequest(BaseModel):
+    job_id: str
+    name: str
+
+def get_saved_models_collection() -> Collection:
+    mongo = MongoDB()
+    return mongo.db["saved_models"]
 
 @router.get("/evaluate/models")
 def get_all_models():
@@ -62,3 +72,49 @@ def evaluate_model(req: EvaluateRequest):
         return evaluate_svm(json_str, req.input_data)
 
     raise HTTPException(status_code=400, detail="Invalid model type.")
+
+@router.get("/evaluate/saved_models")
+def get_saved_models(collection=Depends(get_saved_models_collection)):
+    docs = list(collection.find({}, {"_id": 1, "name": 1, "job_id": 1}))
+    return [
+        {
+            "id": str(doc["_id"]),
+            "name": doc["name"],
+            "job_id": doc["job_id"]
+        }
+        for doc in docs
+    ]
+
+
+@router.post("/evaluate/save_model")
+def save_model(request: SaveModelRequest):
+    mongo = MongoDB()
+    collection = mongo.db["saved_models"]
+
+    if collection.find_one({"name": request.name}):
+        return {
+            "status": "exists",
+            "message": "A model with this name already exists."
+        }
+
+    job_doc = mongo.db["training_jobs"].find_one({"job_id": request.job_id})
+    if not job_doc:
+        return {
+            "status": "not_found",
+            "message": "Training job not found."
+        }
+
+    try:
+        result = collection.insert_one({
+            "name": request.name,
+            "job_id": request.job_id
+        })
+        return {
+            "status": "created",
+            "id": str(result.inserted_id)
+        }
+    except PyMongoError as e:
+        return {
+            "status": "error",
+            "message": f"Failed to save model: {e}"
+        }

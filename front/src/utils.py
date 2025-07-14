@@ -52,3 +52,20 @@ class ApiClient:
         resp = self.session.post(url, json=payload, timeout=self.timeout)
         resp.raise_for_status()
         return resp.json()
+    
+    def save_model(self, job_id, name):
+        url = f"{self.base_url}/evaluate/save_model"
+        payload = {
+            "job_id": job_id,
+            "name": name
+        }
+        resp = self.session.post(url, json=payload, timeout=self.timeout)
+        resp.raise_for_status()
+        return resp.json()
+    
+    def get_saved_models(self):
+        url = f"{self.base_url}/evaluate/get_model_collection"
+        resp = self.session.get(url, timeout=self.timeout)
+        resp.raise_for_status()
+        return resp.json()
+
