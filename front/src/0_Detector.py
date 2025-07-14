@@ -61,12 +61,12 @@ if uploaded_file:
                     result = client.evaluate_model(
                         model_type=model_type,
                         model_name=model_name,
-                        input_data=np.array(img.resize((32, 32))).flatten().tolist()
+                        input_data = (np.array(img.resize((32, 32))).astype(np.float32) / 255.0).flatten().tolist()
                     )
                     pred = result.get("prediction")
                     score = float(pred[0]) if isinstance(pred, list) else float(pred)
 
-                    if score >= 0.5:
+                    if score < 0:
                         result_placeholder.error("🤖 This image is likely AI-generated.")
                         st.toast("Detected as AI-generated", icon="🤖")
                     else:
