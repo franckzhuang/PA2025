@@ -127,36 +127,45 @@ def save_model(request: SaveModelRequest):
             "status": "error",
             "message": f"Failed to save model: {e}"
         }
-
+    
 @router.get("/models/details/{model_name}")
 def get_model_details(
     model_name: str,
     saved_models=Depends(get_saved_models_collection),
     training_jobs=Depends(get_training_jobs_collection)
 ):
-    try:
-        model_doc = saved_models.find_one({"name": model_name})
-        if not model_doc:
-            raise HTTPException(status_code=404, detail="Model not found.")
+    model_doc = saved_models.find_one({"name": model_name})
+    if not model_doc:
+        raise HTTPException(status_code=404, detail="Model not found.")
 
-        job_id = model_doc.get("job_id")
-        job_doc = training_jobs.find_one({"job_id": job_id})
+    job_id = model_doc.get("job_id")
+    job_doc = training_jobs.find_one({"job_id": job_id})
+    if not job_doc:
+        raise HTTPException(status_code=404, detail="Training job not found.")
+    
+        
+    def safe_isoformat(value):
+        if isinstance(value, str):
+            return value
+        if isinstance(value, datetime):
+            return value.isoformat()
+        return None
 
-        if not job_doc:
-            raise HTTPException(status_code=404, detail="Training job not found.")
-
-        model_info = {
-            "model_name": model_doc.get("name"),
-            "model_type": model_doc.get("model_type"),
-            "created_at": model_doc.get("created_at").isoformat() if model_doc.get("created_at") else None,
-            "job": {
-                "job_id": job_doc.get("job_id"),
-                "config": job_doc.get("config"),
-                "params": job_doc.get("params"),
-                "created_at": job_doc.get("created_at").isoformat() if job_doc.get("created_at") else None
-            }
+    model_info = {
+        "model_name": model_doc.get("name"),
+        "model_type": model_doc.get("model_type"),
+        "created_at": model_doc.get("created_at"),
+        "job": {
+            "job_id": job_doc.get("job_id"),
+            "model_type": job_doc.get("model_type"),
+            "status": job_doc.get("status"),
+            "created_at": job_doc.get("created_at"),
+            "started_at": job_doc.get("started_at"),
+            "finished_at": job_doc.get("finished_at"),
+            "hyperparameters": job_doc.get("hyperparameters"),
+            "image_config": job_doc.get("image_config"),
+            "metrics": job_doc.get("metrics"),
+            "params": job_doc.get("params"),
         }
-        return model_info
-
-    except PyMongoError as e:
-        raise HTTPException(status_code=500, detail=f"Database error: {e}")
+    }
+    return model_info
