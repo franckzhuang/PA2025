@@ -42,7 +42,7 @@ class BaseTrainer(ABC):
 
     def run(self):
         try:
-            self._update_status(Status.RUNNING, {"config": self._get_savable_config()})
+            self._update_status(Status.RUNNING, self._get_savable_config())
             log_with_job_id(
                 logger,
                 self.job_id,
@@ -54,6 +54,12 @@ class BaseTrainer(ABC):
                 return self._build_response(
                     Status.FAILURE, error="Not enough images loaded"
                 )
+
+            files = {
+                "files_train": data["files_train"],
+                "files_test": data["files_test"],
+            }
+            self._update_image_config(files)
 
             log_with_job_id(
                 logger,
@@ -125,11 +131,38 @@ class BaseTrainer(ABC):
             upsert=(status == Status.RUNNING),  # Only upsert at start
         )
 
+    def _update_image_config(self, image_config):
+        if not image_config:
+            return
+
+        set_fields = {}
+        for key, value in image_config.items():
+            set_fields[f"image_config.{key}"] = value
+
+        self.collection.update_one(
+            {"job_id": self.job_id},
+            {"$set": set_fields},
+            upsert=True,
+        )
+
     def _get_savable_config(self):
         cfg = self.experiment_config.copy()
-        cfg.pop("real_images_path", None)
-        cfg.pop("ai_images_path", None)
-        return cfg
+        savable_config = {
+            "image_config": {
+                "image_size": cfg["image_size"],
+                "images_per_class": cfg["max_images_per_class"],
+            },
+            "hyperparameters": cfg,
+        }
+        image_keys = [
+            "real_images_path",
+            "ai_images_path",
+            "image_size",
+            "max_images_per_class",
+        ]
+        for key in image_keys:
+            savable_config["hyperparameters"].pop(key, None)
+        return savable_config
 
     def _build_response(self, status, metrics=None, error=None):
         return {

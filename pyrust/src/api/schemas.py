@@ -35,11 +35,13 @@ class KMeansParams(ImageClassificationParams):
     n_clusters: int = 2
     max_iterations: int = 300
 
+
 # ----------------------------------
 # History
 
 from bson import ObjectId
 from pydantic_core import core_schema
+
 
 class PyObjectId(ObjectId):
     @classmethod
@@ -47,6 +49,7 @@ class PyObjectId(ObjectId):
         """
         Définit la logique de validation. Remplace __get_validators__.
         """
+
         def validate(v):
             if not ObjectId.is_valid(v):
                 raise ValueError("Invalid ObjectId")
@@ -54,16 +57,19 @@ class PyObjectId(ObjectId):
 
         return core_schema.json_or_python_schema(
             json_schema=core_schema.str_schema(),
-            python_schema=core_schema.union_schema([
-                core_schema.is_instance_schema(ObjectId),
-                core_schema.no_info_plain_validator_function(validate),
-            ]),
+            python_schema=core_schema.union_schema(
+                [
+                    core_schema.is_instance_schema(ObjectId),
+                    core_schema.no_info_plain_validator_function(validate),
+                ]
+            ),
             serialization=core_schema.plain_serializer_function_ser_schema(str),
         )
 
     @classmethod
     def __get_pydantic_json_schema__(cls, core_schema, handler):
         return {"type": "string"}
+
 
 class Metrics(BaseModel):
     train_accuracy: float
@@ -76,12 +82,13 @@ class Metrics(BaseModel):
     training_duration: float | None = None
 
 
-class TrainingHistory(BaseModel):
+class TrainingJob(BaseModel):
     id: PyObjectId = Field(alias="_id")
     job_id: str
     model_type: str
     status: str
-    config: Dict[str, Any]
+    image_config: Dict[str, Any]
+    hyperparameters: Dict[str, Any]
     metrics: Metrics = None
     created_at: datetime
     started_at: datetime = None
@@ -92,5 +99,3 @@ class TrainingHistory(BaseModel):
         arbitrary_types_allowed=True,
         populate_by_name=True,
     )
-
-

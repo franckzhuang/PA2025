@@ -14,9 +14,12 @@ def inject_styles():
 
 def display_uploaded_image(uploaded_file):
     if not uploaded_file:
-        st.markdown("""
+        st.markdown(
+            """
         <div class="placeholder-box">Drag your 500x500 image here</div>
-        """, unsafe_allow_html=True)
+        """,
+            unsafe_allow_html=True,
+        )
         return None
 
     image = Image.open(uploaded_file)
@@ -24,11 +27,14 @@ def display_uploaded_image(uploaded_file):
     image.save(buffered, format="PNG")
     img_b64 = base64.b64encode(buffered.getvalue()).decode()
 
-    st.markdown(f"""
+    st.markdown(
+        f"""
     <div class="placeholder-box">
         <img src="data:image/png;base64,{img_b64}" style="max-width: 100%; max-height: 100%; object-fit: contain;" />
     </div>
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )
     return image
 
 

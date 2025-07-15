@@ -5,12 +5,14 @@ from pyrust.src.api.service.trainers.base import BaseTrainer
 class MLPTrainer(BaseTrainer):
     def _prepare_config(self, config):
         experiment_config = super()._prepare_config(config)
-        experiment_config.update({
-            "learning_rate": config.get("learning_rate", 0.01),
-            "epochs": config.get("epochs", 1000),
-            "layers": config.get("hidden_layer_sizes", [2, 2]),
-            "threshold": config.get("threshold", 0.5),
-        })
+        experiment_config.update(
+            {
+                "learning_rate": config.get("learning_rate", 0.01),
+                "epochs": config.get("epochs", 1000),
+                "layers": config.get("hidden_layer_sizes", [2, 2]),
+                "threshold": config.get("threshold", 0.5),
+            }
+        )
         return experiment_config
 
     def _train_model(self, data):
