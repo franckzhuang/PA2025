@@ -65,3 +65,10 @@ class ApiClient:
             return res.json()
         else:
             raise Exception(f"Failed to get model details: {res.text}")
+
+    def import_model(self, data: dict):
+        url = f"{self.base_url}/training/import_model"
+        resp = self.session.post(url, json=data, timeout=self.timeout)
+        resp.raise_for_status()
+        return resp.json()
+
