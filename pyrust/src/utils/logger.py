@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
 def setup_logger():
     level = os.environ.get("LOG_LEVEL", "INFO")
     log_config = {

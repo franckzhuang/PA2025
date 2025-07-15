@@ -11,15 +11,16 @@ class SVMTrainer(BaseTrainer):
         if threshold is None:
             threshold = 0.0
 
-        experiment_config.update({
-            "C": config.get("C", 1.0),
-            "kernel": kernel,
-            "gamma": gamma,
-            "threshold": threshold,
-        })
+        experiment_config.update(
+            {
+                "C": config.get("C", 1.0),
+                "kernel": kernel,
+                "gamma": gamma,
+                "threshold": threshold,
+            }
+        )
 
         return experiment_config
-
 
     def _train_model(self, data):
         self.model = mk.SVM(

@@ -6,11 +6,13 @@ class LinearClassificationTrainer(BaseTrainer):
     def _prepare_config(self, config):
         experiment_config = super()._prepare_config(config)
 
-        experiment_config.update({
-            "verbose": config.get("verbose", True),
-            "learning_rate": config.get("learning_rate", 0.01),
-            "max_iterations": config.get("max_iterations", 1000),
-        })
+        experiment_config.update(
+            {
+                "verbose": config.get("verbose", True),
+                "learning_rate": config.get("learning_rate", 0.01),
+                "max_iterations": config.get("max_iterations", 1000),
+            }
+        )
         return experiment_config
 
     def _train_model(self, data):
