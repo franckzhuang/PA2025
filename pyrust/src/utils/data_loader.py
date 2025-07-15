@@ -15,6 +15,7 @@ from pyrust.src.utils.logger import logger
 
 MAX_WORKERS = int(get_env_var("MAX_WORKERS", None))
 
+
 class LoaderType(Enum):
     LOCAL = "local"
     MONGO = "mongo"
@@ -80,8 +81,14 @@ class DataLoader:
                 logger.warning(f"Folder '{folder}' not found.")
                 continue
 
-            all_files = [f for f in os.listdir(folder) if f.lower().endswith((".png", ".jpg", ".jpeg"))]
-            files_to_process = random.sample(all_files, min(len(all_files), max_per_class))
+            all_files = [
+                f
+                for f in os.listdir(folder)
+                if f.lower().endswith((".png", ".jpg", ".jpeg"))
+            ]
+            files_to_process = random.sample(
+                all_files, min(len(all_files), max_per_class)
+            )
 
             for fname in files_to_process:
                 path = os.path.join(folder, fname)

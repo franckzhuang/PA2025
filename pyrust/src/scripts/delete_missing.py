@@ -1,6 +1,7 @@
 import os
 import argparse
 
+
 def get_filenames(directory):
     try:
         return set(os.listdir(directory))
@@ -40,15 +41,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Deletes files in the target folder that are not in the source folder."
     )
+    parser.add_argument("source_dir", help="Path to folder 1 (reference source)")
+    parser.add_argument("target_dir", help="Path to folder 2 (target for deletion)")
     parser.add_argument(
-        "source_dir", help="Path to folder 1 (reference source)"
-    )
-    parser.add_argument(
-        "target_dir", help="Path to folder 2 (target for deletion)"
-    )
-    parser.add_argument(
-        "--execute", action="store_true",
-        help="Activate to performs the deletion. Without this option, the script performs a dry-run.."
+        "--execute",
+        action="store_true",
+        help="Activate to performs the deletion. Without this option, the script performs a dry-run..",
     )
 
     args = parser.parse_args()

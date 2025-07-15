@@ -7,7 +7,9 @@ from datetime import datetime, timezone, timedelta
 from pyrust.src.api.models import Status, ModelType
 from pyrust.src.api.schemas import (
     LinearClassificationParams,
-    MLPParams, SVMParams, TrainingHistory,
+    MLPParams,
+    SVMParams,
+    TrainingJob,
 )
 from pyrust.src.api.service.trainers.svm import SVMTrainer
 from pyrust.src.database.mongo import MongoDB
@@ -26,11 +28,11 @@ def run_training_job(trainer_class, config, collection, job_id):
     trainer = trainer_class(config, collection, job_id)
     trainer.run()
 
+
 def cleanup_old_model_params(collection):
     one_hour_ago = datetime.now(timezone.utc) - timedelta(hours=1)
     collection.update_many(
-        {"created_at": {"$lt": one_hour_ago}},
-        {"$unset": {"params": ""}}
+        {"created_at": {"$lt": one_hour_ago}}, {"$unset": {"params": ""}}
     )
 
 
@@ -81,6 +83,7 @@ def train_mlp(
     )
     return {"job_id": job_id}
 
+
 @router.post("/train/svm", status_code=202)
 def train_svm(
     params: SVMParams,
@@ -112,8 +115,8 @@ def get_training_status(job_id: str, collection=Depends(get_mongo_collection)):
 
 
 @router.get(
-    "/train/history",
-    response_model=List[TrainingHistory],
+    "/train",
+    response_model=List[TrainingJob],
     summary="Get Training History",
     description="Fetches the last 100 training job records, sorted by creation date.",
 )
