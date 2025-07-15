@@ -36,7 +36,7 @@ with st.sidebar:
 
     detect_btn = st.button("🚀 Run Detection")
 
-@st.dialog(f"Model Details", width ="large")
+@st.dialog("Model Details", width="large")
 def show_model_details():
     with st.spinner("Fetching model details..."):
         try:
@@ -48,14 +48,22 @@ def show_model_details():
             st.write(f"**Created At:** {details.get('created_at')}")
 
             st.divider()
-            st.write("## Job Configuration")
-            st.json(details.get("job", {}).get("config"))
+
+            st.write("## Hyperparameters")
+            st.json(details.get("job", {}).get("hyperparameters"))
+
+            st.write("## Image Configuration")
+            st.json(details.get("job", {}).get("image_config"))
+
+            st.write("## Metrics")
+            st.json(details.get("job", {}).get("metrics"))
 
             st.write("## Model Parameters")
             st.json(details.get("job", {}).get("params"))
 
         except Exception as e:
             st.error(f"Error fetching model details: {e}")
+
 
 if show_details_btn:
     show_model_details()
