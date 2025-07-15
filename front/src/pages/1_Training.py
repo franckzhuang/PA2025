@@ -128,6 +128,44 @@ with st.sidebar:
             )
 
     start_btn = st.button("🚀 Start Training")
+    st.markdown("---")
+    st.markdown("📂 Import Existing Model")
+
+    uploaded_model_file = st.file_uploader(
+        "Upload a saved model JSON file",
+        type=["json"],
+    )
+
+    import_btn = st.button("📤 Import Model")
+
+if import_btn:
+    if uploaded_model_file:
+        try:
+            model_data = json.load(uploaded_model_file)
+            res = client.import_model(model_data)
+
+            status = res.get("status")
+            if status == "created":
+                st.success(
+                    f"✅ Model imported successfully!\n\n"
+                    f"**Job ID:** `{res.get('job_id')}`\n\n"
+                    f"**Model Name:** `{res.get('model_name')}`"
+                )
+                st.balloons()
+
+            elif status == "exists":
+                st.warning(
+                    f"⚠️ A training job with this job_id already exists, the model is already implemented.\n\n"
+                )
+            elif status == "error":
+                st.error(f"❌ Error: {res.get('message')}")
+            else:
+                st.error(f"❌ Unknown response: {res}")
+        except Exception as e:
+            st.error(f"❌ Exception while importing model:\n\n{e}")
+    else:
+        st.warning("⚠️ Please upload a JSON file before importing.")
+
 
 if start_btn:
     payload = params.copy()

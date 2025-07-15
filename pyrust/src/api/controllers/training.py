@@ -3,6 +3,7 @@ from typing import List
 from fastapi import BackgroundTasks, Depends, APIRouter
 from uuid import uuid4
 from datetime import datetime, timezone, timedelta
+import json
 
 from pyrust.src.api.models import Status, ModelType
 from pyrust.src.api.schemas import (
@@ -22,6 +23,10 @@ router = APIRouter()
 def get_mongo_collection():
     mongo = MongoDB()
     return mongo.db["training_jobs"]
+
+def get_saved_models_collection():
+    mongo = MongoDB()
+    return mongo.db["saved_models"]
 
 
 def run_training_job(trainer_class, config, collection, job_id):
@@ -124,3 +129,54 @@ def get_history(collection=Depends(get_mongo_collection)):
     history_cursor = collection.find().sort("created_at", -1).limit(100)
     history_list = history_cursor.to_list(length=100)
     return history_list
+
+@router.post("/training/import_model")
+def import_model(
+    data: dict,
+    training_jobs=Depends(get_mongo_collection),
+    saved_models=Depends(get_saved_models_collection)
+):
+    job = data.get("job")
+    if not job:
+        return {"status": "error", "message": "Missing 'job' section in payload."}
+
+    job_id = job.get("job_id")
+    if not job_id:
+        return {"status": "error", "message": "Missing 'job_id' in job section."}
+
+    if training_jobs.find_one({"job_id": job_id}):
+        return {"status": "exists", "message": "A training job with this job_id already exists."}
+    
+    raw_params = data.get("params")
+    if isinstance(raw_params, (dict, list)):
+        params_str = json.dumps(raw_params, indent=2)
+    else:
+        params_str = str(raw_params)
+
+    training_doc = {
+        "job_id": job_id,
+        "model_type": job.get("model_type", "UNKNOWN").upper(),
+        "status": job.get("status", "SUCCESS"),
+        "params": params_str,
+        "created_at": job.get("created_at"),
+        "started_at": job.get("started_at"),
+        "finished_at": job.get("finished_at"),
+        "hyperparameters": job.get("hyperparameters"),
+        "image_config": job.get("image_config"),
+        "metrics": job.get("metrics")
+    }
+    training_jobs.insert_one(training_doc)
+
+    saved_model_doc = {
+        "name": f"Imported {job.get('model_type', 'Model')} - {job.get('created_at')}",
+        "job_id": job_id,
+        "model_type": job.get("model_type", "UNKNOWN").upper(),
+        "created_at": job.get("created_at")
+    }
+    saved_models.insert_one(saved_model_doc)
+
+    return {
+        "status": "created",
+        "job_id": job_id,
+        "model_name": saved_model_doc["name"]
+    }
