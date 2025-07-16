@@ -151,7 +151,6 @@ with st.sidebar:
                 min_value=1e-4,
                 max_value=10.0,
                 value=0.1,
-                format="%.4f"
             )
 
             rbf_params = {
