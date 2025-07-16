@@ -93,11 +93,13 @@ if uploaded_file:
         if detect_btn:
             with st.spinner("Evaluating..."):
                 try:
+                    img_array = np.array(img.convert("RGB"), dtype=np.float32)
                     result = client.evaluate_model(
                         model_type=model_type,
                         model_name=model_name,
-                        input_data=(np.array(img.resize((32, 32))).astype(np.float32) / 255.0).flatten().tolist()
+                        input_data=img_array.tolist()
                     )
+
                     pred = result.get("prediction")
                     score = float(pred[0]) if isinstance(pred, list) else float(pred)
 
