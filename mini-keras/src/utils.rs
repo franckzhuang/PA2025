@@ -1,77 +1,77 @@
-// #[derive(Debug, Clone, Copy, PartialEq)]
-// pub enum ModelMode {
-//     Regression,
-//     Classification,
-// }
-//
-// impl ModelMode {
-//     pub fn from_str(mode_str: &str) -> Result<Self, String> {
-//         match mode_str.to_lowercase().as_str() {
-//             "regression" => Ok(ModelMode::Regression),
-//             "classification" => Ok(ModelMode::Classification),
-//             _ => Err(format!(
-//                 "Invalid model mode: '{}'. Please, make sure to use 'regression' or 'classification'.",
-//                 mode_str
-//             )),
-//         }
-//     }
-// }
 
-pub fn check_mode(mode_input: &str) -> Result<String, String> {
-    let mode_lowercase = mode_input.to_lowercase();
-    if mode_lowercase == "classification" || mode_lowercase == "regression" {
-        Ok(mode_lowercase)
-    } else {
-        Err(format!(
-            "Invalid mode: '{}'. Supported modes are 'classification' or 'regression'.",
-            mode_input
-        ))
-    }
+/// Multiply matrix (m x n) by vector (n) => vector (m)
+pub(crate) fn matrix_vector_product(matrix: &[Vec<f64>], vector: &[f64]) -> Vec<f64> {
+    matrix
+        .iter()
+        .map(|row| row.iter().zip(vector.iter()).map(|(a, b)| a * b).sum())
+        .collect()
 }
 
-pub fn mse(predictions: &[f64], actual: &[f64]) -> f64 {
-    if predictions.len() != actual.len() {
-        panic!(
-            "Error: predictions and actual values must have the same length. \
-            Pred len: {}, Actual len: {}",
-            predictions.len(),
-            actual.len()
-        );
-    }
-
-    if predictions.is_empty() {
-        return 0.0;
-    }
-
-    let mut sum_squared_error = 0.0;
-    for (pred, act) in predictions.iter().zip(actual.iter()) {
-        let error = pred - act;
-        sum_squared_error += error * error;
-    }
-
-    sum_squared_error / predictions.len() as f64
-}
-
-pub fn accuracy(predictions: &[f64], actual: &[f64]) -> f64 {
-    if predictions.len() != actual.len() {
-        panic!(
-            "Error: predictions and actual values must have the same length. \
-            Pred len: {}, Actual len: {}",
-            predictions.len(),
-            actual.len()
-        );
-    }
-
-    if predictions.is_empty() {
-        return 0.0;
-    }
-
-    let mut correct_count = 0;
-    for (pred, act) in predictions.iter().zip(actual.iter()) {
-        if (*pred >= 0.0 && *act >= 0.0) || (*pred < 0.0 && *act < 0.0) {
-            correct_count += 1;
+/// Multiply two matrices: A (p x q) * B (q x r) => C (p x r)
+pub(crate) fn matrix_multiply(a: &[Vec<f64>], b: &[Vec<f64>]) -> Vec<Vec<f64>> {
+    let p = a.len();
+    let q = if p > 0 { a[0].len() } else { 0 };
+    let r = if !b.is_empty() { b[0].len() } else { 0 };
+    let mut c = vec![vec![0.0; r]; p];
+    for i in 0..p {
+        for k in 0..q {
+            for j in 0..r {
+                c[i][j] += a[i][k] * b[k][j];
+            }
         }
     }
+    c
+}
 
-    correct_count as f64 / predictions.len() as f64
+/// Transpose a matrix
+pub(crate) fn transpose(matrix: &[Vec<f64>]) -> Vec<Vec<f64>> {
+    if matrix.is_empty() { return vec![]; }
+    let rows = matrix.len();
+    let cols = matrix[0].len();
+    let mut t = vec![vec![0.0; rows]; cols];
+    for i in 0..rows {
+        for j in 0..cols {
+            t[j][i] = matrix[i][j];
+        }
+    }
+    t
+}
+
+/// Squared Euclidean distance between two vectors
+pub(crate) fn distance(x1: &[f64], x2: &[f64]) -> f64 {
+    x1.iter().zip(x2.iter()).map(|(a, b)| (a - b).powi(2)).sum()
+}
+
+/// Invert square matrix using Gaussian elimination
+pub(crate) fn invert_matrix(matrix: &[Vec<f64>]) -> Vec<Vec<f64>> {
+    let n = matrix.len();
+    let mut aug: Vec<Vec<f64>> = matrix
+        .iter()
+        .zip((0..n).map(|i| (0..n).map(|j| if i == j { 1.0 } else { 0.0 }).collect::<Vec<_>>()))
+        .map(|(row, id)| {
+            let mut r = row.clone();
+            r.extend(id);
+            r
+        })
+        .collect();
+
+    for i in 0..n {
+        // pivot
+        let pivot = aug[i][i];
+        // if pivot.abs() < 1e-12 {
+        //     // return Err("Singular matrix".into());
+        // }
+        for j in 0..2 * n {
+            aug[i][j] /= pivot + 1e-12;
+        }
+        for k in 0..n {
+            if k != i {
+                let factor = aug[k][i];
+                for j in 0..2 * n {
+                    aug[k][j] -= factor * aug[i][j];
+                }
+            }
+        }
+    }
+    aug.into_iter().map(|row| row[n..].to_vec()).collect()
 }

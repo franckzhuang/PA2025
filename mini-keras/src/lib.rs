@@ -16,6 +16,8 @@ mod svm;
 mod rbf_naive;
 mod rbf;
 
+mod kmeans;
+
 use crate::linear_model_gradient::LinearModelGradientDescent as RustLinearModelGradient;
 use crate::linear_model::LinearRegression as RustLinearRegression;
 use crate::linear_model::LinearClassification as RustLinearClassification;
