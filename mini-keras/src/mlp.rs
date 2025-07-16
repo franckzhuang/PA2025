@@ -194,7 +194,7 @@ impl MLP {
         let mut train_accuracies: Vec<f64> = Vec::new();
         let mut test_accuracies: Vec<f64> = Vec::new();
         for _ in 0..epochs {
-             
+
             let mut total_train_loss: f64 = 0.0;
             let mut total_train_accuracy: f64 = 0.0;
 
@@ -207,22 +207,22 @@ impl MLP {
                 // compute MSE gradient
                 let outs = &activations;
                 let deltas: Vec<f64> = outs.iter().map(|&out| 2.0 * (out - yi)).collect();
-                
+
                 // backward pass
                 let mut deltas = deltas;
                 for layer in self.layers.iter_mut().rev() {
                     deltas = layer.backward(&deltas, lr);
                 }
-                
+
                 // accumulate loss
                 let train_loss: f64 = outs.iter().map(|&out| (out - yi).powi(2)).sum::<f64>() / outs.len() as f64;
                 total_train_loss += train_loss;
-                
-                
+
+
                 // compute accuracy
                 if self.is_classification {
                     total_train_accuracy += accuracy_mlp(activations[0], yi);
-                    
+
                 }
 
             }
@@ -234,10 +234,10 @@ impl MLP {
                 total_train_accuracy /= x_train.len() as f64;
                 train_accuracies.push(total_train_accuracy);
             }
-            
-            
 
-            
+
+
+
             
             // EVAL
             
@@ -254,7 +254,7 @@ impl MLP {
                 let outs = &activations;
                 let test_loss: f64 = outs.iter().map(|&out| (out - yi).powi(2)).sum::<f64>() / outs.len() as f64;
                 total_test_loss += test_loss;
-                
+
                 if self.is_classification {
                     total_test_accuracy += accuracy_mlp(activations[0], yi);
                 }
@@ -263,7 +263,7 @@ impl MLP {
             // average loss for this epoch
             total_test_loss /= x_test.len() as f64;
             test_losses.push(total_test_loss);
-            
+
             // compute test accuracy
             if self.is_classification {
                 total_test_accuracy /= x_test.len() as f64;
@@ -279,7 +279,7 @@ impl MLP {
             results.push(test_accuracies);
         }
         results
-        
+
     }
 }
 
