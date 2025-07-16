@@ -38,8 +38,8 @@ pub struct PyRBFNaive {
 #[pymethods]
 impl PyRBFNaive {
     #[new]
-    fn new(x: Vec<Vec<f64>>, y: Vec<f64>, gamma: f64, is_class: bool) -> PyResult<Self> {
-        let model = RustRBFNaive::new(x, y, gamma, is_class);
+    fn new(x: Vec<Vec<f64>>, y: Vec<f64>, gamma: f64, is_classification: bool) -> PyResult<Self> {
+        let model = RustRBFNaive::new(x, y, gamma, is_classification);
         Ok(PyRBFNaive { model })
     }
 
@@ -47,6 +47,7 @@ impl PyRBFNaive {
         Ok(self.model.predict(&x_new))
     }
 }
+
 
 #[pyclass(name="RBFKMeans")]
 pub struct PyRBFKMeans {
@@ -56,8 +57,8 @@ pub struct PyRBFKMeans {
 #[pymethods]
 impl PyRBFKMeans {
     #[new]
-    fn new(x: Vec<Vec<f64>>, y: Vec<f64>, k: usize, gamma: f64, max_iters: usize, is_class: bool) -> PyResult<Self> {
-        let model = RustRBFKmeans::new(x, y, k, gamma, max_iters, is_class);
+    fn new(x: Vec<Vec<f64>>, y: Vec<f64>, k: usize, gamma: f64, max_iters: usize, is_classification: bool) -> PyResult<Self> {
+        let model = RustRBFKmeans::new(x, y, k, gamma, max_iters, is_classification);
         Ok(PyRBFKMeans { model })
     }
 

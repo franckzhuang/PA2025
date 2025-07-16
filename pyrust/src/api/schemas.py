@@ -31,11 +31,10 @@ class MLPParams(ImageClassificationParams):
     activations: List[str] = ["linear", "linear"]
     epochs: int = 1000
 
-
-class KMeansParams(ImageClassificationParams):
-    n_clusters: int = 2
-    max_iterations: int = 300
-
+class RBFParams(ImageClassificationParams):
+    k: Optional[int] = 3
+    gamma: float = 0.01
+    max_iterations: int = 1000
 
 # ----------------------------------
 # History
