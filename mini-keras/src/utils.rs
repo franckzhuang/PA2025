@@ -75,3 +75,27 @@ pub(crate) fn invert_matrix(matrix: &[Vec<f64>]) -> Vec<Vec<f64>> {
     }
     aug.into_iter().map(|row| row[n..].to_vec()).collect()
 }
+
+
+/// assuming classification task, compute accuracy for one input x and true label y_true
+pub(crate) fn accuracy_mlp(
+    x: f64,
+    y_true: f64
+) -> f64 {
+    (x - y_true).abs()
+}
+
+pub(crate) fn batch_accuracy_mlp(
+    x: &[f64],
+    y_true: &[f64]
+) -> Vec<f64> {
+    if x.len() != y_true.len() {
+        panic!("Error: x and y_true must have the same length.");
+    }
+    
+    let accuracies: Vec<f64> = x.iter()
+        .zip(y_true.iter())
+        .map(|(&x_i, &y_i)| accuracy_mlp(x_i, y_i))
+        .collect();
+    accuracies
+}

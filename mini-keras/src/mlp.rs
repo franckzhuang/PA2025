@@ -1,6 +1,9 @@
 use std::f64;
 use rand::Rng;
 
+use crate::utils::batch_accuracy_mlp;
+use crate::utils::accuracy_mlp;
+
 /// returns a random f64 in [-1.0, 1.0]
 fn random() -> f64 {
     let mut rng = rand::rng();
@@ -178,8 +181,12 @@ impl MLP {
     ) -> Vec<Vec<f64>> {
         let mut train_losses:Vec<f64> = Vec::new();
         let mut test_losses:Vec<f64> = Vec::new();
+        let mut train_accuracies: Vec<f64> = Vec::new();
+        let mut test_accuracies: Vec<f64> = Vec::new();
         for _ in 0..epochs {
+             
             let mut total_train_loss: f64 = 0.0;
+            let mut total_train_accuracy: f64 = 0.0;
             for (xi, &yi) in x_train.iter().zip(y_train.iter()) {
                 // forward pass
                 let mut activations = xi.clone();
@@ -189,23 +196,40 @@ impl MLP {
                 // compute MSE gradient
                 let outs = &activations;
                 let deltas: Vec<f64> = outs.iter().map(|&out| 2.0 * (out - yi)).collect();
+                
                 // backward pass
                 let mut deltas = deltas;
                 for layer in self.layers.iter_mut().rev() {
                     deltas = layer.backward(&deltas, lr);
                 }
+                
                 // accumulate loss
                 let train_loss: f64 = outs.iter().map(|&out| (out - yi).powi(2)).sum::<f64>() / outs.len() as f64;
                 total_train_loss += train_loss;
+                
+                
+                // compute accuracy
+                if self.is_classification {
+                    total_train_accuracy += accuracy_mlp(activations[0], yi);
+                    
+                }
             }
             // average loss for this epoch
             total_train_loss /= x_train.len() as f64;
             train_losses.push(total_train_loss);
+            // compute train accuracy
+            if self.is_classification {
+                total_train_accuracy /= x_train.len() as f64;
+                train_accuracies.push(total_train_accuracy);
+            }
+            
+            
             
             
             // EVAL
             
             let mut total_test_loss: f64 = 0.0;
+            let mut total_test_accuracy: f64 = 0.0;
             for (xi, &yi) in x_test.iter().zip(y_test.iter()) {
                 // forward pass
                 let mut activations = xi.clone();
@@ -216,16 +240,31 @@ impl MLP {
                 let outs = &activations;
                 let test_loss: f64 = outs.iter().map(|&out| (out - yi).powi(2)).sum::<f64>() / outs.len() as f64;
                 total_test_loss += test_loss;
+                
+                if self.is_classification {
+                    total_test_accuracy += accuracy_mlp(activations[0], yi);
+                }
             }
             // average loss for this epoch
             total_test_loss /= x_test.len() as f64;
             test_losses.push(total_test_loss);
+            
+            // compute test accuracy
+            if self.is_classification {
+                total_test_accuracy /= x_test.len() as f64;
+                test_accuracies.push(total_test_accuracy);
+            }
         }
-        // concatenate train and test losses
-        let mut losses = Vec::new();
-        losses.push(train_losses);
-        losses.push(test_losses);
-        losses
+        // concatenate train_losses, test_losses, train_accuracies, test_accuracies
+        let mut results: Vec<Vec<f64>> = Vec::new();
+        results.push(train_losses);
+        results.push(test_losses);
+        if self.is_classification {
+            results.push(train_accuracies);
+            results.push(test_accuracies);
+        }
+        results
+        
     }
 }
 
