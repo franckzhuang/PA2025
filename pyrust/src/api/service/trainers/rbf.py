@@ -33,7 +33,7 @@ class RBFTrainer(BaseTrainer):
                 is_classification=True,
             )
         else:
-            self.model = mk.RBFKMeans(
+            self.model = mk.RBFNaive(
                 x=data["X_train"],
                 y=data["y_train"],
                 k=self.experiment_config["k"],
