@@ -179,15 +179,18 @@ impl MLP {
 
     /// Train on dataset x and targets y using SGD and MSE loss
     pub fn train(&mut self,
-                 x: &[Vec<f64>],
-                 y: &[f64],
+                 x_train: &[Vec<f64>],
+                 y_train: &[f64],
+                 x_test: &[Vec<f64>],
+                 y_test: &[f64],
                  epochs: usize,
                  lr: f64
-    ) -> Vec<f64> {
+    ) -> Vec<Vec<f64>> {
         let mut train_losses:Vec<f64> = Vec::new();
+        let mut test_losses:Vec<f64> = Vec::new();
         for _ in 0..epochs {
-            let mut total_loss: f64 = 0.0;
-            for (xi, &yi) in x.iter().zip(y.iter()) {
+            let mut total_train_loss: f64 = 0.0;
+            for (xi, &yi) in x_train.iter().zip(y_train.iter()) {
                 // forward pass
                 let mut activations = xi.clone();
                 for layer in self.layers.iter_mut() {
@@ -202,27 +205,50 @@ impl MLP {
                     deltas = layer.backward(&deltas, lr);
                 }
                 // accumulate loss
-                let loss: f64 = outs.iter().map(|&out| (out - yi).powi(2)).sum::<f64>() / outs.len() as f64;
-                total_loss += loss;
+                let train_loss: f64 = outs.iter().map(|&out| (out - yi).powi(2)).sum::<f64>() / outs.len() as f64;
+                total_train_loss += train_loss;
             }
             // average loss for this epoch
-            total_loss /= x.len() as f64;
-            train_losses.push(total_loss);
+            total_train_loss /= x_train.len() as f64;
+            train_losses.push(total_train_loss);
+            
+            
+            // EVAL
+            
+            let mut total_test_loss: f64 = 0.0;
+            for (xi, &yi) in x_test.iter().zip(y_test.iter()) {
+                // forward pass
+                let mut activations = xi.clone();
+                for layer in self.layers.iter_mut() {
+                    activations = layer.forward(&activations);
+                }
+                // compute MSE loss
+                let outs = &activations;
+                let test_loss: f64 = outs.iter().map(|&out| (out - yi).powi(2)).sum::<f64>() / outs.len() as f64;
+                total_test_loss += test_loss;
+            }
+            // average loss for this epoch
+            total_test_loss /= x_test.len() as f64;
+            test_losses.push(total_test_loss);
         }
-        train_losses
+        // concatenate train and test losses
+        let mut losses = Vec::new();
+        losses.push(train_losses);
+        losses.push(test_losses);
+        losses
     }
 }
 
 // Example usage (XOR)
 fn main() {
-    let l1 = Dense::new(2, 2, Activation::Sigmoid);
-    let l2 = Dense::new(2, 1, Activation::Linear);
-    let mut mlp = MLP::new(vec![l1, l2], true);
-    let x = vec![vec![1.0, 0.0], vec![0.0, 1.0], vec![0.0, 0.0], vec![1.0, 1.0]];
-    let y = vec![1.0,1.0,0.0,0.0];
-    let train_losses = mlp.train(&x, &y, 100_000, 0.01);
-    println!("Training losses: {:?}", train_losses);
-    for x in x.iter() {
-        println!("Prediction for {:?}: {:?}", x, mlp.predict(x));
-    }
+    // let l1 = Dense::new(2, 2, Activation::Sigmoid);
+    // let l2 = Dense::new(2, 1, Activation::Linear);
+    // let mut mlp = MLP::new(vec![l1, l2], true);
+    // let x = vec![vec![1.0, 0.0], vec![0.0, 1.0], vec![0.0, 0.0], vec![1.0, 1.0]];
+    // let y = vec![1.0,1.0,0.0,0.0];
+    // let train_losses = mlp.train(&x, &y, 100_000, 0.01);
+    // println!("Training losses: {:?}", train_losses);
+    // for x in x.iter() {
+    //     println!("Prediction for {:?}: {:?}", x, mlp.predict(x));
+    // }
 }

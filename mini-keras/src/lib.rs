@@ -193,8 +193,8 @@ impl PyMLP {
         Ok(self.model.predict(&x))
     }
 
-    fn fit(&mut self, x_train: Vec<Vec<f64>>, y_train: Vec<f64>, epochs: usize, lr : f64) -> PyResult<Vec<f64>> {
-        let train_losses = self.model.train(&x_train, &y_train, epochs, lr);
+    fn fit(&mut self, x_train: Vec<Vec<f64>>, y_train: Vec<f64>, x_test:Vec<Vec<f64>>, y_test:Vec<f64>, epochs: usize, lr : f64) -> PyResult<Vec<Vec<f64>>> {
+        let train_losses = self.model.train(&x_train, &y_train, &x_test, &y_test, epochs, lr);
         Ok(train_losses)
 
     }
