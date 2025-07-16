@@ -28,6 +28,7 @@ class SVMParams(ImageClassificationParams):
 class MLPParams(ImageClassificationParams):
     learning_rate: float = 0.01
     hidden_layer_sizes: List[int] = [2, 2]
+    activations: List[str] = ["linear", "linear"]
     epochs: int = 1000
 
 

@@ -35,7 +35,7 @@ with st.sidebar:
 
     with st.expander("1. Data Settings", expanded=True):
         max_samples = st.number_input(
-            "Max samples per class", min_value=2, max_value=10000, value=90, step=1
+            "Samples per class", min_value=2, max_value=10000, value=90, step=1
         )
         img_w = st.number_input(
             "Image width", min_value=16, max_value=1024, value=32, step=1
@@ -80,7 +80,6 @@ with st.sidebar:
                         min_value=0.01,
                         max_value=100.0,
                         value=1.0,
-                        format="%.2f",
                     ),
                     "kernel": st.selectbox("Kernel", ["linear", "rbf"]),
                 }
@@ -94,38 +93,53 @@ with st.sidebar:
                     format="%.4f",
                 )
         elif model_type == "mlp":
-            params.update(
-                {
-                    "learning_rate": st.number_input(
-                        "Learning Rate",
-                        min_value=1e-4,
-                        max_value=1.0,
-                        value=0.01,
-                        format="%.4f",
-                    ),
-                    "epochs": st.number_input(
-                        "Epochs", min_value=1, max_value=10000, value=10, step=1
-                    ),
-                    "hidden_layer_sizes": st.text_input(
-                        "Hidden layers (comma-separated)", value="64,32"
-                    ),
-                }
+            learning_rate = st.number_input(
+                "Learning Rate",
+                min_value=1e-4,
+                max_value=1.0,
+                value=0.01,
             )
-        elif model_type == "kmeans":
-            params.update(
-                {
-                    "n_clusters": st.number_input(
-                        "Clusters", min_value=2, max_value=20, value=2, step=1
-                    ),
-                    "max_iterations": st.number_input(
-                        "Max Iterations",
+            epochs = st.number_input(
+                "Epochs", min_value=1, max_value=10000, value=10, step=1
+            )
+
+            st.divider()
+
+            st.write("**Layer Configuration**")
+
+            num_layers = st.number_input("Number of hidden layers", min_value=1, max_value=10, value=3)
+
+            hidden_layer_sizes = []
+            activations = []
+
+            for i in range(num_layers):
+                st.write(f"--- Layer {i + 1} ---")
+                col1, col2 = st.columns(2)
+
+                with col1:
+                    size = col1.number_input(
+                        "Neurons",
                         min_value=1,
-                        max_value=10000,
-                        value=300,
-                        step=1,
-                    ),
-                }
-            )
+                        value=32 if i < num_layers - 1 else 1,
+                        key=f"layer_size_{i}"
+                    )
+                    hidden_layer_sizes.append(size)
+
+                with col2:
+                    activation = col2.selectbox(
+                        "Activation",
+                        options=["sigmoid", "linear"],
+                        index=0,
+                        key=f"activation_{i}"
+                    )
+                    activations.append(activation)
+
+            params.update({
+                "learning_rate": learning_rate,
+                "epochs": epochs,
+                "hidden_layer_sizes": hidden_layer_sizes,
+                "activations": activations,
+            })
 
     start_btn = st.button("🚀 Start Training")
     st.markdown("---")
@@ -169,12 +183,6 @@ if import_btn:
 
 if start_btn:
     payload = params.copy()
-    if model_type == "mlp":
-        payload["hidden_layer_sizes"] = [
-            int(x)
-            for x in params["hidden_layer_sizes"].split(",")
-            if x.strip().isdigit()
-        ]
 
     try:
         st.session_state.job_id = client.start_training(model_type, payload)
