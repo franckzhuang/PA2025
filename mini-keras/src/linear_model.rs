@@ -1,5 +1,5 @@
 use ndarray::{Array1, Array2, s};
-use ndarray_linalg::Inverse;
+// use ndarray_linalg::Inverse;
 use serde::{Serialize, Deserialize};
 use std::fs::File;
 
@@ -91,64 +91,64 @@ impl LinearClassification {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct LinearRegression {
-    pub weights: Option<Vec<f64>>,
-    pub bias: Option<f64>,
-}
+// #[derive(Serialize, Deserialize, Debug, Clone)]
+// pub struct LinearRegression {
+//     pub weights: Option<Vec<f64>>,
+//     pub bias: Option<f64>,
+// }
 
-impl LinearRegression {
-    pub fn new() -> Self {
-        Self { weights: None, bias: None }
-    }
-
-    pub fn fit(&mut self, x: &[Vec<f64>], y: &[f64]) {
-        let n_samples = x.len();
-        let n_features = if n_samples > 0 { x[0].len() } else { 0 };
-
-        let flat_x: Vec<f64> = x.iter().flat_map(|row| row.iter()).copied().collect();
-        let x_arr = Array2::from_shape_vec((n_samples, n_features), flat_x)
-            .expect("Bad input shape for X");
-        let y_arr = Array1::from(y.to_vec());
-
-        let x_aug = Self::add_bias(&x_arr);
-
-        let xtx = x_aug.t().dot(&x_aug);
-        let xty = x_aug.t().dot(&y_arr);
-        let xtx_inv = xtx.inv().expect("XTX not inversible !");
-        let all_weights = xtx_inv.dot(&xty);
-
-        self.bias = Some(all_weights[0]);
-        self.weights = Some(all_weights.slice(s![1..]).to_vec());
-    }
-
-    pub fn predict(&self, x: &[f64]) -> f64 {
-        let weights = self.weights.as_ref().expect("Model not fit");
-        let bias = self.bias.expect("Model not fit");
-        x.iter().zip(weights.iter()).map(|(xi, wi)| xi * wi).sum::<f64>() + bias
-    }
-
-    fn add_bias(x: &Array2<f64>) -> Array2<f64> {
-        let n_samples = x.nrows();
-        let n_features = x.ncols();
-        let mut x_aug = Array2::<f64>::ones((n_samples, n_features + 1));
-        for i in 0..n_samples {
-            for j in 0..n_features {
-                x_aug[(i, j + 1)] = x[(i, j)];
-            }
-        }
-        x_aug
-    }
-
-    pub fn save_json(&self, path: &str) -> std::io::Result<()> {
-        let file = File::create(path)?;
-        serde_json::to_writer_pretty(file, self)?;
-        Ok(())
-    }
-
-    pub fn load_json(path: &str) -> std::io::Result<Self> {
-        let file = File::open(path)?;
-        let model = serde_json::from_reader(file)?;
-        Ok(model)
-    }
-}
+// impl LinearRegression {
+//     pub fn new() -> Self {
+//         Self { weights: None, bias: None }
+//     }
+//
+//     pub fn fit(&mut self, x: &[Vec<f64>], y: &[f64]) {
+//         let n_samples = x.len();
+//         let n_features = if n_samples > 0 { x[0].len() } else { 0 };
+//
+//         let flat_x: Vec<f64> = x.iter().flat_map(|row| row.iter()).copied().collect();
+//         let x_arr = Array2::from_shape_vec((n_samples, n_features), flat_x)
+//             .expect("Bad input shape for X");
+//         let y_arr = Array1::from(y.to_vec());
+//
+//         let x_aug = Self::add_bias(&x_arr);
+//
+//         let xtx = x_aug.t().dot(&x_aug);
+//         let xty = x_aug.t().dot(&y_arr);
+//         let xtx_inv = xtx.inv().expect("XTX not inversible !");
+//         let all_weights = xtx_inv.dot(&xty);
+//
+//         self.bias = Some(all_weights[0]);
+//         self.weights = Some(all_weights.slice(s![1..]).to_vec());
+//     }
+//
+//     pub fn predict(&self, x: &[f64]) -> f64 {
+//         let weights = self.weights.as_ref().expect("Model not fit");
+//         let bias = self.bias.expect("Model not fit");
+//         x.iter().zip(weights.iter()).map(|(xi, wi)| xi * wi).sum::<f64>() + bias
+//     }
+//
+//     fn add_bias(x: &Array2<f64>) -> Array2<f64> {
+//         let n_samples = x.nrows();
+//         let n_features = x.ncols();
+//         let mut x_aug = Array2::<f64>::ones((n_samples, n_features + 1));
+//         for i in 0..n_samples {
+//             for j in 0..n_features {
+//                 x_aug[(i, j + 1)] = x[(i, j)];
+//             }
+//         }
+//         x_aug
+//     }
+//
+//     pub fn save_json(&self, path: &str) -> std::io::Result<()> {
+//         let file = File::create(path)?;
+//         serde_json::to_writer_pretty(file, self)?;
+//         Ok(())
+//     }
+//
+//     pub fn load_json(path: &str) -> std::io::Result<Self> {
+//         let file = File::open(path)?;
+//         let model = serde_json::from_reader(file)?;
+//         Ok(model)
+//     }
+// }

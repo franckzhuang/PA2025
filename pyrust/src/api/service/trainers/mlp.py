@@ -10,6 +10,7 @@ class MLPTrainer(BaseTrainer):
                 "learning_rate": config.get("learning_rate", 0.01),
                 "epochs": config.get("epochs", 1000),
                 "layers": config.get("hidden_layer_sizes", [2, 2]),
+                "activations": config.get("activations", ["linear"] * 2),
                 "threshold": config.get("threshold", 0.5),
             }
         )
@@ -19,6 +20,7 @@ class MLPTrainer(BaseTrainer):
         self.model = mk.MLP(
             is_classification=True,
             layers=self.experiment_config["layers"],
+            activations=self.experiment_config["activations"],
         )
         self.model.fit(
             data["X_train"],

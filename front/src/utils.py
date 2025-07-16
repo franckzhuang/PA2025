@@ -9,7 +9,7 @@ API_URL = os.environ.get("API_URL", "http://localhost:8000")
 class ApiClient:
     """Client pour interagir avec l'API d'entraînement."""
 
-    def __init__(self, base_url=API_URL, timeout=10, max_retries=3):
+    def __init__(self, base_url=API_URL, timeout=60, max_retries=3):
         self.base_url = base_url.rstrip("/")
         self.session = requests.Session()
         self.timeout = timeout
