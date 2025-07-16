@@ -84,19 +84,25 @@ try:
             ].iloc[0]
 
             if "params" in job_details_row and pd.notna(job_details_row["params"]):
-                model_type = job_details_row.get("model_type", "model")
+                job_dict = job_details_row.to_dict()
+                model_type = job_dict.get("model_type")
+
+                export_data = {
+                    "model_type": model_type,
+                    "params": json.loads(job_dict.get("params", "{}")),
+                    "job": {
+                        k: v for k, v in job_dict.items() if k != "params"
+                    }
+                }
+
                 date_str = pd.to_datetime(job_details_row.get("created_at")).strftime(
                     "%Y%m%d_%H%M%S"
                 )
                 file_name = f"{date_str}_{model_type}_params.json"
 
-                params_data = job_details_row["params"]
-                if not isinstance(params_data, str):
-                    params_data = json.dumps(params_data, indent=2)
-
                 st.download_button(
                     label="📥 Download Model Params",
-                    data=params_data.encode("utf-8"),
+                    data=json.dumps(export_data, indent=2, default=str).encode("utf-8"),
                     file_name=file_name,
                     mime="application/json",
                 )
