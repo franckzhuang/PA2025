@@ -46,6 +46,18 @@ impl PyRBFNaive {
     fn predict(&self, x_new: Vec<f64>) -> PyResult<f64> {
         Ok(self.model.predict(&x_new))
     }
+
+    fn to_json(&self) -> PyResult<String> {
+        serde_json::to_string_pretty(&self.model)
+            .map_err(|e| PyValueError::new_err(e.to_string()))
+    }
+
+    #[staticmethod]
+    fn from_json(json_str: String) -> PyResult<Self> {
+        let model: RustRBFNaive = serde_json::from_str(&json_str)
+            .map_err(|e| PyValueError::new_err(e.to_string()))?;
+        Ok(PyRBFNaive { model })
+    }
 }
 
 
@@ -64,6 +76,18 @@ impl PyRBFKMeans {
 
     fn predict(&self, x_new: Vec<f64>) -> PyResult<f64> {
         Ok(self.model.predict(&x_new))
+    }
+
+    fn to_json(&self) -> PyResult<String> {
+        serde_json::to_string_pretty(&self.model)
+            .map_err(|e| PyValueError::new_err(e.to_string()))
+    }
+
+    #[staticmethod]
+    fn from_json(json_str: String) -> PyResult<Self> {
+        let model: RustRBFKmeans = serde_json::from_str(&json_str)
+            .map_err(|e| PyValueError::new_err(e.to_string()))?;
+        Ok(PyRBFKMeans { model })
     }
 }
 
