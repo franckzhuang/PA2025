@@ -2,6 +2,7 @@
 use crate::utils::{distance};
 
 /// K-means clustering
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct KMeans {
     pub k: usize,
     pub max_iters: usize,

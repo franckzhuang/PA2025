@@ -11,9 +11,8 @@ COPY uv.lock .python-version pyproject.toml ./
 
 RUN uv sync
 
-
 WORKDIR /app
 
-COPY src/load_fiftyone.py ./
+COPY src/scripts/load_fiftyone.py ./
 
 CMD ["uv", "run", "load_fiftyone.py"]

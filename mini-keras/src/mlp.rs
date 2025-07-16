@@ -1,4 +1,5 @@
 use std::f64;
+use serde::{Serialize, Deserialize};
 use rand::Rng;
 
 use crate::utils::batch_accuracy_mlp;
@@ -11,10 +12,13 @@ fn random() -> f64 {
 }
 
 /// A single perceptron (neuron) with weights, bias, and cached state
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Perceptron {
     weights: Vec<f64>,
     bias: f64,
+    #[serde(skip)]
     last_inputs: Vec<f64>,
+    #[serde(skip)]
     last_z: f64,
 }
 
@@ -54,15 +58,20 @@ impl Perceptron {
 }
 
 /// A fully-connected layer consisting of multiple perceptrons
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Dense {
     neurons: Vec<Perceptron>,
     activation: Activation,
+    #[serde(skip)]
     last_inputs: Vec<f64>,
+    #[serde(skip)]
     last_zs: Vec<f64>,
+    #[serde(skip)]
     last_activations: Vec<f64>,
 }
 
 /// Supported activation functions
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum Activation {
     Sigmoid,
     Linear,
@@ -136,6 +145,7 @@ impl Dense {
 }
 
 /// A simple multi-layer perceptron
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct MLP {
     layers: Vec<Dense>,
     is_classification: bool,
@@ -187,6 +197,7 @@ impl MLP {
              
             let mut total_train_loss: f64 = 0.0;
             let mut total_train_accuracy: f64 = 0.0;
+
             for (xi, &yi) in x_train.iter().zip(y_train.iter()) {
                 // forward pass
                 let mut activations = xi.clone();
@@ -213,6 +224,7 @@ impl MLP {
                     total_train_accuracy += accuracy_mlp(activations[0], yi);
                     
                 }
+
             }
             // average loss for this epoch
             total_train_loss /= x_train.len() as f64;
@@ -224,12 +236,14 @@ impl MLP {
             }
             
             
+
             
             
             // EVAL
             
             let mut total_test_loss: f64 = 0.0;
             let mut total_test_accuracy: f64 = 0.0;
+
             for (xi, &yi) in x_test.iter().zip(y_test.iter()) {
                 // forward pass
                 let mut activations = xi.clone();
@@ -244,6 +258,7 @@ impl MLP {
                 if self.is_classification {
                     total_test_accuracy += accuracy_mlp(activations[0], yi);
                 }
+
             }
             // average loss for this epoch
             total_test_loss /= x_test.len() as f64;
