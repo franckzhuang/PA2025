@@ -46,7 +46,7 @@ with st.sidebar:
 
     with st.expander("2. Model Hyperparameters", expanded=True):
         model_type = st.selectbox(
-            "Model Type", ["linear_classification", "svm", "mlp", "kmeans"]
+            "Model Type", ["linear_classification", "svm", "mlp", "rbf"]
         )
 
         params = {
@@ -140,6 +140,47 @@ with st.sidebar:
                 "hidden_layer_sizes": hidden_layer_sizes,
                 "activations": activations,
             })
+        elif model_type == "rbf":
+            rbf_type = st.selectbox(
+                "RBF Type",
+                options=["naive", "kmeans"]
+            )
+
+            gamma = st.number_input(
+                "Gamma",
+                min_value=1e-4,
+                max_value=10.0,
+                value=0.1,
+                format="%.4f"
+            )
+
+            rbf_params = {
+                "rbf_type": rbf_type,
+                "gamma": gamma
+            }
+
+            if rbf_type == "kmeans":
+                st.write("*K-Means Specific Parameters*")
+                k = st.number_input(
+                    "K (Number of Centers)",
+                    min_value=2,
+                    max_value=100,
+                    value=10,
+                    step=1
+                )
+                max_iterations = st.number_input(
+                    "Max Iterations",
+                    min_value=1,
+                    max_value=10000,
+                    value=300,
+                    step=1
+                )
+                rbf_params.update({
+                    "k": k,
+                    "max_iterations": max_iterations
+                })
+
+            params.update(rbf_params)
 
     start_btn = st.button("🚀 Start Training")
     st.markdown("---")
