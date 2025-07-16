@@ -10,8 +10,9 @@ from pyrust.src.api.schemas import (
     LinearClassificationParams,
     MLPParams,
     SVMParams,
-    TrainingJob,
+    TrainingJob, RBFParams,
 )
+from pyrust.src.api.service.trainers.rbf import RBFTrainer
 from pyrust.src.api.service.trainers.svm import SVMTrainer
 from pyrust.src.database.mongo import MongoDB
 from pyrust.src.api.service.trainers.linear import LinearClassificationTrainer
@@ -112,8 +113,8 @@ def train_svm(
 
 
 @router.post("/train/rbf", status_code=202)
-def train_svm(
-    params: SVMParams,
+def train_rbf(
+    params: RBFParams,
     background_tasks: BackgroundTasks,
     collection=Depends(get_mongo_collection),
 ):
@@ -128,7 +129,7 @@ def train_svm(
         }
     )
     background_tasks.add_task(
-        run_training_job, SVMTrainer, params.model_dump(), collection, job_id
+        run_training_job, RBFTrainer, params.model_dump(), collection, job_id
     )
     return {"job_id": job_id}
 

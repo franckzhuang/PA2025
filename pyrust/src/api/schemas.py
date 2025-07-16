@@ -32,9 +32,9 @@ class MLPParams(ImageClassificationParams):
     epochs: int = 1000
 
 class RBFParams(ImageClassificationParams):
-    k: Optional[int] = 3
+    k: Optional[int] = None
     gamma: float = 0.01
-    max_iterations: int = 1000
+    max_iterations: Optional[int] = None
 
 # ----------------------------------
 # History
