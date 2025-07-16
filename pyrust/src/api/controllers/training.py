@@ -111,6 +111,28 @@ def train_svm(
     return {"job_id": job_id}
 
 
+@router.post("/train/rbf", status_code=202)
+def train_svm(
+    params: SVMParams,
+    background_tasks: BackgroundTasks,
+    collection=Depends(get_mongo_collection),
+):
+    cleanup_old_model_params(collection)
+    job_id = str(uuid4())
+    collection.insert_one(
+        {
+            "job_id": job_id,
+            "model_type": ModelType.RBF.value,
+            "status": Status.RUNNING.value,
+            "created_at": datetime.now(timezone.utc),
+        }
+    )
+    background_tasks.add_task(
+        run_training_job, SVMTrainer, params.model_dump(), collection, job_id
+    )
+    return {"job_id": job_id}
+
+
 @router.get("/train/status/{job_id}")
 def get_training_status(job_id: str, collection=Depends(get_mongo_collection)):
     job = collection.find_one({"job_id": job_id}, {"_id": 0})
