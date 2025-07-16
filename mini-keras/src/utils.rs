@@ -1,4 +1,3 @@
-
 /// Multiply matrix (m x n) by vector (n) => vector (m)
 pub(crate) fn matrix_vector_product(matrix: &[Vec<f64>], vector: &[f64]) -> Vec<f64> {
     matrix
@@ -47,7 +46,7 @@ pub(crate) fn invert_matrix(matrix: &[Vec<f64>]) -> Vec<Vec<f64>> {
     let n = matrix.len();
     let mut aug: Vec<Vec<f64>> = matrix
         .iter()
-        .zip((0..n).map(|i| (0..n).map(|j| if i == j { 1.0 } else { 0.0 }).collect::<Vec<_>>()))
+        .zip((0..n).map(|i| (0..n).map(|j| if i == j { 1.0 } else { 0.0 }).collect::<Vec<_>>() ))
         .map(|(row, id)| {
             let mut r = row.clone();
             r.extend(id);
@@ -56,11 +55,7 @@ pub(crate) fn invert_matrix(matrix: &[Vec<f64>]) -> Vec<Vec<f64>> {
         .collect();
 
     for i in 0..n {
-        // pivot
         let pivot = aug[i][i];
-        // if pivot.abs() < 1e-12 {
-        //     // return Err("Singular matrix".into());
-        // }
         for j in 0..2 * n {
             aug[i][j] /= pivot + 1e-12;
         }
@@ -76,7 +71,6 @@ pub(crate) fn invert_matrix(matrix: &[Vec<f64>]) -> Vec<Vec<f64>> {
     aug.into_iter().map(|row| row[n..].to_vec()).collect()
 }
 
-
 /// assuming classification task, compute accuracy for one input x and true label y_true
 pub(crate) fn accuracy_mlp(
     x: f64,
@@ -85,6 +79,7 @@ pub(crate) fn accuracy_mlp(
     (x - y_true).abs()
 }
 
+/// assuming classification task, compute accuracy for a batch
 pub(crate) fn batch_accuracy_mlp(
     x: &[f64],
     y_true: &[f64]
@@ -93,68 +88,8 @@ pub(crate) fn batch_accuracy_mlp(
         panic!("Error: x and y_true must have the same length.");
     }
 
-    let accuracies: Vec<f64> = x.iter()
+    x.iter()
         .zip(y_true.iter())
         .map(|(&x_i, &y_i)| accuracy_mlp(x_i, y_i))
-        .collect();
-    accuracies
-}
-
-/// Squared Euclidean distance between two vectors
-pub(crate) fn distance(x1: &[f64], x2: &[f64]) -> f64 {
-    x1.iter().zip(x2.iter()).map(|(a, b)| (a - b).powi(2)).sum()
-}
-
-/// Invert square matrix using Gaussian elimination
-pub(crate) fn invert_matrix(matrix: &[Vec<f64>]) -> Vec<Vec<f64>> {
-    let n = matrix.len();
-    let mut aug: Vec<Vec<f64>> = matrix
-        .iter()
-        .zip((0..n).map(|i| (0..n).map(|j| if i == j { 1.0 } else { 0.0 }).collect::<Vec<_>>()))
-        .map(|(row, id)| {
-            let mut r = row.clone();
-            r.extend(id);
-            r
-        })
-        .collect();
-
-    for i in 0..n {
-        // pivot
-        let pivot = aug[i][i];
-        // if pivot.abs() < 1e-12 {
-        //     // return Err("Singular matrix".into());
-        // }
-        for j in 0..2 * n {
-            aug[i][j] /= pivot + 1e-12;
-        }
-        for k in 0..n {
-            if k != i {
-                let factor = aug[k][i];
-                for j in 0..2 * n {
-                    aug[k][j] -= factor * aug[i][j];
-                }
-            }
-        }
-/// assuming classification task, compute accuracy for one input x and true label y_true
-pub(crate) fn accuracy_mlp(
-    x: f64,
-    y_true: f64
-) -> f64 {
-    (x - y_true).abs()
-}
-
-pub(crate) fn batch_accuracy_mlp(
-    x: &[f64],
-    y_true: &[f64]
-) -> Vec<f64> {
-    if x.len() != y_true.len() {
-        panic!("Error: x and y_true must have the same length.");
-    }
-
-    let accuracies: Vec<f64> = x.iter()
-        .zip(y_true.iter())
-        .map(|(&x_i, &y_i)| accuracy_mlp(x_i, y_i))
-        .collect();
-    accuracies
-    aug.into_iter().map(|row| row[n..].to_vec()).collect()
+        .collect()
 }
