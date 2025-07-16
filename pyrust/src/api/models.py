@@ -10,6 +10,6 @@ class ModelType(Enum):
 
 
 class Status(Enum):
-    SUCCESS = "success"
-    FAILURE = "failure"
-    RUNNING = "running"
+    SUCCESS = "SUCCESS"
+    FAILURE = "FAILURE"
+    RUNNING = "RUNNING"
