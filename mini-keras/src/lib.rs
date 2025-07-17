@@ -218,11 +218,20 @@ impl PyMLP {
         Ok(self.model.predict(&x))
     }
 
-    fn fit(&mut self, x_train: Vec<Vec<f64>>, y_train: Vec<f64>, x_test:Vec<Vec<f64>>, y_test:Vec<f64>, epochs: usize, lr : f64) -> PyResult<Vec<Vec<f64>>> {
-        let train_losses = self.model.train(&x_train, &y_train, &x_test, &y_test, epochs, lr);
-        Ok(train_losses)
+    fn fit(&mut self, x_train: Vec<Vec<f64>>, y_train: Vec<f64>, x_test:Vec<Vec<f64>>, y_test:Vec<f64>, epochs: usize, lr : f64) -> PyResult<()> {
+        self.model.train(&x_train, &y_train, &x_test, &y_test, epochs, lr);
+        Ok(())
 
     }
+
+    #[getter]
+    fn train_losses(&self) -> Vec<f64> { self.model.train_losses.clone() }
+    #[getter]
+    fn test_losses(&self)  -> Vec<f64> { self.model.test_losses.clone()  }
+    #[getter]
+    fn train_accuracies(&self) -> Vec<f64> { self.model.train_accuracies.clone() }
+    #[getter]
+    fn test_accuracies(&self)  -> Vec<f64> { self.model.test_accuracies.clone()  }
 
     fn to_json(&self) -> PyResult<String> {
         serde_json::to_string_pretty(&self.model)
