@@ -149,6 +149,10 @@ impl Dense {
 pub struct MLP {
     layers: Vec<Dense>,
     is_classification: bool,
+    pub train_losses: Vec<f64>,
+    pub test_losses: Vec<f64>,
+    pub train_accuracies: Vec<f64>,
+    pub test_accuracies: Vec<f64>,
 }
 
 impl MLP {
@@ -163,12 +167,25 @@ impl MLP {
             if last_layer.neurons.len() != 1 || matches!(last_layer.activation, Activation::Linear) {
                 // let mut new_layers = layers;
                 layers.push(Dense::new(last_layer.neurons.len(), 1, Activation::Sigmoid));
-                return MLP { layers, is_classification: true };
+                return MLP {
+                    layers,
+                    is_classification: true ,
+                    train_losses: Vec::new(),
+                    test_losses: Vec::new(),
+                    train_accuracies: Vec::new(),
+                    test_accuracies: Vec::new(),
+                };
             }
         }
 
-
-        MLP { layers, is_classification }
+        MLP {
+            layers,
+            is_classification,
+            train_losses: Vec::new(),
+            test_losses: Vec::new(),
+            train_accuracies: Vec::new(),
+            test_accuracies: Vec::new(),
+        }
     }
 
     /// Predict outputs for a single input sample
@@ -188,11 +205,7 @@ impl MLP {
                  y_test: &[f64],
                  epochs: usize,
                  lr: f64
-    ) -> Vec<Vec<f64>> {
-        let mut train_losses:Vec<f64> = Vec::new();
-        let mut test_losses:Vec<f64> = Vec::new();
-        let mut train_accuracies: Vec<f64> = Vec::new();
-        let mut test_accuracies: Vec<f64> = Vec::new();
+    ) {
         for _ in 0..epochs {
 
             let mut total_train_loss: f64 = 0.0;
@@ -228,11 +241,11 @@ impl MLP {
             }
             // average loss for this epoch
             total_train_loss /= x_train.len() as f64;
-            train_losses.push(total_train_loss);
+            self.train_losses.push(total_train_loss);
             // compute train accuracy
             if self.is_classification {
                 total_train_accuracy /= x_train.len() as f64;
-                train_accuracies.push(total_train_accuracy);
+                self.train_accuracies.push(total_train_accuracy);
             }
 
 
@@ -262,23 +275,14 @@ impl MLP {
             }
             // average loss for this epoch
             total_test_loss /= x_test.len() as f64;
-            test_losses.push(total_test_loss);
+            self.test_losses.push(total_test_loss);
 
             // compute test accuracy
             if self.is_classification {
                 total_test_accuracy /= x_test.len() as f64;
-                test_accuracies.push(total_test_accuracy);
+                self.test_accuracies.push(total_test_accuracy);
             }
         }
-        // concatenate train_losses, test_losses, train_accuracies, test_accuracies
-        let mut results: Vec<Vec<f64>> = Vec::new();
-        results.push(train_losses);
-        results.push(test_losses);
-        if self.is_classification {
-            results.push(train_accuracies);
-            results.push(test_accuracies);
-        }
-        results
 
     }
 }
