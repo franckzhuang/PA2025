@@ -349,25 +349,28 @@ if st.session_state.active_polling and st.session_state.job_id:
                     else:
                         st.write("No metrics to display.")
 
-                    export = {
-                        "model_type": model_type,
-                        "params": json.loads(resp.get("params", "{}")),
-                        "job": resp.copy(),
-                    }
+                    if resp.get("params_path"):
+                        try:
+                            params_content = client.get_params_for_job(st.session_state.job_id)
 
-                    export["job"].pop("params", None)
-                    if export:
-                        dt = datetime.now().strftime("%Y%m%d_%H%M%S")
-                        fname = f"{dt}_{model_type}_params.json"
-                        st.download_button(
-                            "📥 Download Model Params",
-                            data=json.dumps(export, indent=2).encode(),
-                            file_name=fname,
-                            mime="application/json",
-                        )
-                        st.info(
-                            "💡 If you want to save this model to the database, please go to the **History** page."
-                        )
+                            export_data = {
+                                "model_type": model_type,
+                                "params": params_content,
+                                "job": resp.copy(),
+                            }
+                            export_data["job"].pop("params_path", None)
+                            export_data["job"].pop("params", None)
+
+                            dt = datetime.now().strftime("%Y%m%d_%H%M%S")
+                            fname = f"{dt}_{model_type}_export.json"
+                            st.download_button(
+                                "📥 Download Model Export",
+                                data=json.dumps(export_data, indent=2).encode('utf-8'),
+                                file_name=fname,
+                                mime="application/json",
+                            )
+                        except Exception as e:
+                            st.error(f"Failed to fetch model params for export: {e}")
                     break
                 if status == "FAILURE":
                     st.session_state.active_polling = False

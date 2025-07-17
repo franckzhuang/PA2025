@@ -1,6 +1,7 @@
+import os
 from typing import List
 
-from fastapi import BackgroundTasks, Depends, APIRouter
+from fastapi import BackgroundTasks, Depends, APIRouter, HTTPException
 from uuid import uuid4
 from datetime import datetime, timezone, timedelta
 import json
@@ -17,6 +18,7 @@ from pyrust.src.api.service.trainers.svm import SVMTrainer
 from pyrust.src.database.mongo import MongoDB
 from pyrust.src.api.service.trainers.linear import LinearClassificationTrainer
 from pyrust.src.api.service.trainers.mlp import MLPTrainer
+from pyrust.src.utils.logger import logger
 
 router = APIRouter()
 
@@ -37,9 +39,41 @@ def run_training_job(trainer_class, config, collection, job_id):
 
 def cleanup_old_model_params(collection):
     one_hour_ago = datetime.now(timezone.utc) - timedelta(hours=1)
-    collection.update_many(
-        {"created_at": {"$lt": one_hour_ago}}, {"$unset": {"params": ""}}
-    )
+
+    query = {
+        "created_at": {"$lt": one_hour_ago},
+        "params_path": {"$exists": True}
+    }
+    docs_to_cleanup = list(collection.find(query))
+
+    if not docs_to_cleanup:
+        return
+
+    ids_to_update = []
+
+    for doc in docs_to_cleanup:
+        path_str = doc.get("params_path")
+        if not path_str:
+            continue
+
+        try:
+            if os.path.exists(path_str):
+                os.remove(path_str)
+                logger.info(f"Cleanup: Deleted old model file at {path_str}")
+            else:
+                logger.warning(f"Cleanup: File not found at {path_str}, but path exists in DB.")
+
+            ids_to_update.append(doc['_id'])
+
+        except Exception as e:
+            logger.error(f"Cleanup: Failed to delete file {path_str}. Error: {e}")
+
+    if ids_to_update:
+        collection.update_many(
+            {"_id": {"$in": ids_to_update}},
+            {"$unset": {"params_path": ""}}
+        )
+        logger.info(f"Cleanup: Removed params_path from {len(ids_to_update)} old jobs.")
 
 
 @router.post("/train/linear_classification", status_code=202)
@@ -138,8 +172,29 @@ def train_rbf(
 def get_training_status(job_id: str, collection=Depends(get_mongo_collection)):
     job = collection.find_one({"job_id": job_id}, {"_id": 0})
     if not job:
-        return {"status": "not_found"}
+        raise HTTPException(status_code=404, detail="Job not found.")
     return job
+
+
+@router.get("/train/{job_id}/params")
+def get_job_params(job_id: str, collection=Depends(get_mongo_collection)):
+    job = collection.find_one({"job_id": job_id})
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found.")
+
+    params_path = job.get("params_path")
+    if not params_path:
+        raise HTTPException(status_code=404, detail="No params file path found for this job.")
+
+    if not os.path.exists(params_path):
+        raise HTTPException(status_code=404, detail=f"Params file not found at path: {params_path}")
+
+    try:
+        with open(params_path, 'r') as f:
+            params_data = json.load(f)
+        return params_data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to read or parse params file: {e}")
 
 
 @router.get(

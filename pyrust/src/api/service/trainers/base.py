@@ -11,11 +11,19 @@ from pyrust.src.utils.logger import logger, log_with_job_id
 
 class BaseTrainer(ABC):
     def __init__(self, config, collection, job_id):
-        self.job_id = job_id
-        self.collection = collection
-        self.base_path = Path(__file__).parent.parent.parent.parent
-        self.experiment_config = self._prepare_config(config)
-        self.model = None
+        try:
+            self.job_id = job_id
+            self.collection = collection
+
+            self.base_path = Path(__file__).parent.parent.parent.parent
+            self.models_path = self.base_path / "models/training_models"
+            self.models_path.mkdir(parents=True, exist_ok=True)
+
+            self.experiment_config = self._prepare_config(config)
+            self.model = None
+        except Exception as e:
+            log_with_job_id(logger, job_id, f"Initialization error: {str(e)}", level=logging.ERROR)
+            raise e
 
     def _prepare_config(self, config):
         base_config = {
@@ -81,7 +89,26 @@ class BaseTrainer(ABC):
                 self.model.to_json() if hasattr(self.model, "to_json") else None
             )
 
-            update_data = {"metrics": metrics, "params": model_params}
+            params_path = None
+            if model_params:
+                file_path = self.models_path / f"{self.job_id}_params.json"
+                params_path = str(file_path)
+
+                try:
+                    with open(file_path, 'w') as f:
+                        if isinstance(model_params, dict):
+                            json.dump(model_params, f, indent=2)
+                        else:
+                            f.write(model_params)
+                    log_with_job_id(logger, self.job_id, f"Model parameters saved to {params_path}")
+                except Exception as e:
+                    log_with_job_id(logger, self.job_id, f"Failed to save model params to file: {e}", level=logging.ERROR)
+                    params_path = None
+
+            update_data = {"metrics": metrics}
+            if params_path:
+                update_data["params_path"] = params_path
+
             self._update_status(Status.SUCCESS, update_data)
 
             log_with_job_id(
