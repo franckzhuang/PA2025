@@ -23,30 +23,32 @@ if "job_id" not in st.session_state:
     st.session_state.job_id = None
 if "active_polling" not in st.session_state:
     st.session_state.active_polling = False
-if "chart_data" not in st.session_state:
-    st.session_state.chart_data = []
-if "blind_progress" not in st.session_state:
-    st.session_state.blind_progress = 0
+if "last_run_results" not in st.session_state:
+    st.session_state.last_run_results = None
 
 st.title("🏞️ AI vs Real Landscape - Training Dashboard")
 
 with st.sidebar:
     st.header("🛠️ Configuration")
 
+    is_training = st.session_state.active_polling
+
+
     with st.expander("1. Data Settings", expanded=True):
         max_samples = st.number_input(
-            "Samples per class", min_value=2, max_value=10000, value=90, step=1
+            "Samples per class", min_value=2, max_value=10000, value=90, step=1, disabled=is_training
         )
         img_w = st.number_input(
-            "Image width", min_value=16, max_value=1024, value=32, step=1
+            "Image width", min_value=16, max_value=1024, value=32, step=1, disabled=is_training
         )
         img_h = st.number_input(
-            "Image height", min_value=16, max_value=1024, value=32, step=1
+            "Image height", min_value=16, max_value=1024, value=32, step=1, disabled=is_training
         )
 
     with st.expander("2. Model Hyperparameters", expanded=True):
         model_type = st.selectbox(
-            "Model Type", ["linear_classification", "svm", "mlp", "rbf"]
+            "Model Type", ["linear_classification", "svm", "mlp", "rbf"],
+            disabled=is_training,
         )
 
         params = {
@@ -62,6 +64,7 @@ with st.sidebar:
                         min_value=1e-4,
                         max_value=1.0,
                         value=0.01,
+                        disabled=is_training,
                     ),
                     "max_iterations": st.number_input(
                         "Max Iterations",
@@ -69,6 +72,7 @@ with st.sidebar:
                         max_value=100000,
                         value=1000,
                         step=1,
+                        disabled=is_training,
                     ),
                 }
             )
@@ -80,8 +84,9 @@ with st.sidebar:
                         min_value=0.01,
                         max_value=100.0,
                         value=1.0,
+                        disabled=is_training,
                     ),
-                    "kernel": st.selectbox("Kernel", ["linear", "rbf"]),
+                    "kernel": st.selectbox("Kernel", ["linear", "rbf"], disabled=is_training),
                 }
             )
             if params["kernel"] == "rbf":
@@ -90,7 +95,7 @@ with st.sidebar:
                     min_value=1e-4,
                     max_value=1.0,
                     value=0.01,
-                    format="%.4f",
+                    disabled=is_training,
                 )
         elif model_type == "mlp":
             learning_rate = st.number_input(
@@ -98,6 +103,7 @@ with st.sidebar:
                 min_value=1e-4,
                 max_value=1.0,
                 value=0.01,
+                disabled=is_training,
             )
             epochs = st.number_input(
                 "Epochs", min_value=1, max_value=10000, value=10, step=1
@@ -121,7 +127,8 @@ with st.sidebar:
                         "Neurons",
                         min_value=1,
                         value=32 if i < num_layers - 1 else 1,
-                        key=f"layer_size_{i}"
+                        key=f"layer_size_{i}",
+                        disabled=is_training,
                     )
                     hidden_layer_sizes.append(size)
 
@@ -130,7 +137,8 @@ with st.sidebar:
                         "Activation",
                         options=["sigmoid", "linear"],
                         index=0,
-                        key=f"activation_{i}"
+                        key=f"activation_{i}",
+                        disabled = is_training,
                     )
                     activations.append(activation)
 
@@ -143,7 +151,8 @@ with st.sidebar:
         elif model_type == "rbf":
             rbf_type = st.selectbox(
                 "RBF Type",
-                options=["naive", "kmeans"]
+                options=["naive", "kmeans"],
+                disabled=is_training
             )
 
             gamma = st.number_input(
@@ -151,6 +160,7 @@ with st.sidebar:
                 min_value=1e-4,
                 max_value=10.0,
                 value=0.1,
+                disabled=is_training,
             )
 
             rbf_params = {
@@ -165,14 +175,16 @@ with st.sidebar:
                     min_value=2,
                     max_value=100,
                     value=10,
-                    step=1
+                    step=1,
+                    disabled=is_training,
                 )
                 max_iterations = st.number_input(
                     "Max Iterations",
                     min_value=1,
                     max_value=10000,
                     value=300,
-                    step=1
+                    step=1,
+                    disabled=is_training,
                 )
                 rbf_params.update({
                     "k": k,
@@ -181,16 +193,17 @@ with st.sidebar:
 
             params.update(rbf_params)
 
-    start_btn = st.button("🚀 Start Training")
+    start_btn = st.button("🚀 Start Training", disabled=is_training)
     st.markdown("---")
     st.markdown("📂 Import Existing Model")
 
     uploaded_model_file = st.file_uploader(
         "Upload a saved model JSON file",
         type=["json"],
+        disabled=is_training,
     )
 
-    import_btn = st.button("📤 Import Model")
+    import_btn = st.button("📤 Import Model", disabled=is_training)
 
 if import_btn:
     if uploaded_model_file:
@@ -225,164 +238,125 @@ if start_btn:
     payload = params.copy()
 
     try:
+        st.session_state.last_run_results = None
+
         st.session_state.job_id = client.start_training(model_type, payload)
         st.session_state.active_polling = True
-        st.session_state.chart_data = []
         st.session_state.blind_progress = 0
         st.success(f"Training started! Job ID: {st.session_state.job_id}")
+        st.rerun()
     except Exception as e:
         st.error(f"Failed to start training: {e}")
 
 if st.session_state.active_polling and st.session_state.job_id:
-    spinner = st.spinner("🔄 Training in progress…")
-    status_text = st.empty()
-    metrics_chart = st.empty()
-    progress_bar = st.progress(0)
-
-    with spinner:
-        while st.session_state.active_polling:
+    with st.spinner("🔄 Training in progress…"):
+        while True:
             try:
                 resp = client.get_status(st.session_state.job_id)
                 status = resp.get("status")
-                metrics = resp.get("metrics", {})
-                pct = resp.get("progress", None)
+                st.info(f"Status: {status}")
 
-                status_text.markdown(f"**Status:** {status}")
-                if pct is not None:
-                    st.session_state.blind_progress = pct
-                else:
-                    st.session_state.blind_progress = min(
-                        st.session_state.blind_progress + 5, 100
-                    )
-                progress_bar.progress(st.session_state.blind_progress)
-
-                if "epoch" in metrics:
-                    st.session_state.chart_data.append(metrics)
-                    df = pd.DataFrame(st.session_state.chart_data)
-                    metrics_chart.line_chart(
-                        df.set_index("epoch")[[k for k in df.columns if k != "epoch"]]
-                    )
-
-                if status == "SUCCESS":
+                if status in ["SUCCESS", "FAILURE"]:
                     st.session_state.active_polling = False
-                    st.balloons()
-                    status_text.success("✅ Training completed successfully!")
+                    st.session_state.last_run_results = resp
+                    st.rerun()
 
-                    if metrics:
-                        rename_map = {
-                            "len_real_images": "Real Images",
-                            "len_ai_images": "AI Images",
-                            "train_samples": "Train Samples",
-                            "test_samples": "Test Samples",
-                            "train_accuracy": "Train Accuracy",
-                            "test_accuracy": "Test Accuracy",
-                        }
-
-                        col1, col2 = st.columns(2)
-
-                        with col1:
-                            counts = {
-                                rename_map[k]: metrics[k]
-                                for k in ["len_real_images", "len_ai_images"]
-                                if k in metrics
-                            }
-                            if counts:
-                                df_counts = pd.DataFrame(
-                                    {"count": list(counts.values())},
-                                    index=list(counts.keys()),
-                                )
-                                fig1 = px.pie(
-                                    df_counts,
-                                    names=df_counts.index,
-                                    values="count",
-                                    title="📊 Image Source Distribution",
-                                )
-                                fig1.update_traces(textinfo="value+label")
-                                st.plotly_chart(fig1, use_container_width=True)
-
-                        with col2:
-                            samples = {
-                                rename_map[k]: metrics[k]
-                                for k in ["train_samples", "test_samples"]
-                                if k in metrics
-                            }
-                            if samples:
-                                df_samples = pd.DataFrame(
-                                    {"count": list(samples.values())},
-                                    index=list(samples.keys()),
-                                )
-                                fig2 = px.pie(
-                                    df_samples,
-                                    names=df_samples.index,
-                                    values="count",
-                                    title="📚 Data Split Distribution",
-                                )
-                                fig2.update_traces(textinfo="value+label")
-                                st.plotly_chart(fig2, use_container_width=True)
-
-                        st.divider()
-
-                        col3, col4, col5 = st.columns(3)
-
-                        with col3:
-                            train_acc = metrics.get("train_accuracy", 0)
-                            st.metric(
-                                label="🎯 Train Accuracy", value=f"{train_acc:.2f}%"
-                            )
-
-                        with col4:
-                            test_acc = metrics.get("test_accuracy", 0)
-                            st.metric(
-                                label="🧪 Test Accuracy",
-                                value=f"{test_acc:.2f}%",
-                                help="Accuracy on unseen data. This is the most important metric.",
-                            )
-
-                        with col5:
-                            duration = metrics.get("training_duration", 0)
-                            st.metric(
-                                label="⏱️ Training Duration",
-                                value=f"{duration:.2f} s",
-                                help="Total time taken for the model training.",
-                            )
-
-                    else:
-                        st.write("No metrics to display.")
-
-                    if resp.get("params_file"):
-                        try:
-                            params_content = client.get_params_for_job(st.session_state.job_id)
-
-                            export_data = {
-                                "model_type": resp.get("model_type"),
-                                "params": params_content,
-                                "job": resp.copy(),
-                            }
-                            export_data["job"].pop("params_file", None)
-                            export_data["job"].pop("params", None)
-
-                            dt = datetime.now().strftime("%Y%m%d_%H%M%S")
-                            fname = f"{dt}_{model_type}_export.json"
-                            st.download_button(
-                                "📥 Download Model Export",
-                                data=json.dumps(export_data, indent=2).encode('utf-8'),
-                                file_name=fname,
-                                mime="application/json",
-                            )
-                            st.info(
-                                "💡 If you want to save this model to the database, please go to the **History** page."
-                            )
-                        except Exception as e:
-                            st.error(f"Failed to fetch model params for export: {e}")
-                    break
-                if status == "FAILURE":
-                    st.session_state.active_polling = False
-                    err = resp.get("error", "Unknown error")
-                    status_text.error(f"Training failed: {err}")
-                    break
-
-                time.sleep(1)
+                time.sleep(2)
             except Exception as e:
                 st.session_state.active_polling = False
-                status_text.error(f"Error polling status: {e}")
-                break
+                st.session_state.last_run_results = {"status": "FAILURE", "error": str(e)}
+                st.rerun()
+
+if st.session_state.last_run_results:
+    if st.button("🧨 Reset"):
+        st.session_state.last_run_results = None
+        st.rerun()
+
+    st.divider()
+
+    results = st.session_state.last_run_results
+    status = results.get("status")
+
+    if status == "SUCCESS":
+        st.success("✅ Training completed successfully!")
+        st.balloons()
+
+        metrics = results.get("metrics", {})
+        if not metrics:
+            st.write("No metrics to display.")
+        else:
+
+            st.subheader("📂 Data Distribution")
+            col_pie1, col_pie2 = st.columns(2)
+            with col_pie1:
+                df_counts = pd.DataFrame({
+                    'type': ['Real', 'AI'],
+                    'count': [metrics.get('len_real_images', 0), metrics.get('len_ai_images', 0)]
+                })
+                fig1 = px.pie(df_counts, names='type', values='count', title='📊 Image Source Distribution')
+                st.plotly_chart(fig1, use_container_width=True)
+
+            with col_pie2:
+                df_samples = pd.DataFrame({
+                    'type': ['Train', 'Test'],
+                    'count': [metrics.get('train_samples', 0), metrics.get('test_samples', 0)]
+                })
+                fig2 = px.pie(df_samples, names='type', values='count', title='📚 Data Split Distribution')
+                st.plotly_chart(fig2, use_container_width=True)
+
+            st.divider()
+
+            st.subheader("📊 Final Metrics")
+            col1, col2, col3 = st.columns(3)
+            col1.metric("🎯 Train Accuracy", f"{metrics.get('train_accuracy', 0):.2f}%")
+            col2.metric("🧪 Test Accuracy", f"{metrics.get('test_accuracy', 0):.2f}%")
+            col3.metric("⏱️ Training duration", f"{metrics.get('training_duration', 0):.2f}s")
+
+            if 'train_losses' in metrics and 'train_accuracies' in metrics:
+                st.divider()
+                st.subheader("📈 Training Evolution per Epoch")
+                col_loss, col_acc = st.columns(2)
+
+                with col_loss:
+                    df_losses = pd.DataFrame({
+                        'Train Loss': metrics['train_losses'],
+                        'Test Loss': metrics.get('test_losses', [])
+                    })
+                    st.line_chart(df_losses)
+                    st.caption("Loss Evolution (Train vs Test)")
+
+                with col_acc:
+                    df_accuracies = pd.DataFrame({
+                        'Train Accuracy': metrics['train_accuracies'],
+                        'Test Accuracy': metrics.get('test_accuracies', [])
+                    })
+                    st.line_chart(df_accuracies)
+                    st.caption("Accuracy Evolution (Train vs Test)")
+
+            st.divider()
+
+            if results.get("params_file"):
+                try:
+                    params_content = client.get_params_for_job(st.session_state.job_id)
+                    export_data = {
+                        "model_type": results.get("model_type"),
+                        "params": params_content,
+                        "job": results,
+                    }
+                    dt = datetime.now().strftime("%Y%m%d_%H%M%S")
+                    fname = f"{dt}_{results.get('model_type', 'model')}_export.json"
+                    st.info(
+                        "💡 If you want to save this model to the database, please go to the **History** page."
+                    )
+                    st.download_button(
+                        "📥 Download Model Export",
+                        data=json.dumps(export_data, indent=2, default=str).encode('utf-8'),
+                        file_name=fname,
+                        mime="application/json",
+                    )
+                except Exception as e:
+                    st.error(f"Failed to fetch model params for export: {e}")
+
+    elif status == "FAILURE":
+        err = results.get("error", "Unknown error")
+        st.error(f"Training failed: {err}")
