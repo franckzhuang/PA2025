@@ -62,17 +62,18 @@ class DataLoader:
 
     @staticmethod
     def _load_local(config):
-        X_data, y_data, file_names_list = [], [], []
-        loaded_counts = {"real": 0, "ai": 0}
-        max_per_class = config.get("max_images_per_class", 0)
         target_size = tuple(config.get("image_size", ()))
+        max_per_class = config.get("max_images_per_class", 0)
         sources = [
             {"path": config["real_images_path"], "label": 1.0, "key": "real"},
             {"path": config["ai_images_path"], "label": -1.0, "key": "ai"},
         ]
 
+        data_by_class = {"real": [], "ai": []}
+        fnames_by_class = {"real": [], "ai": []}
         tasks = []
         task_info = {}
+        loaded_counts = {"real": 0, "ai": 0}
 
         logger.info("Preparing image processing tasks...")
         for source in sources:
@@ -82,18 +83,15 @@ class DataLoader:
                 continue
 
             all_files = [
-                f
-                for f in os.listdir(folder)
+                f for f in os.listdir(folder)
                 if f.lower().endswith((".png", ".jpg", ".jpeg"))
             ]
-            files_to_process = random.sample(
-                all_files, min(len(all_files), max_per_class)
-            )
+            files_to_process = random.sample(all_files, min(len(all_files), max_per_class))
 
             for fname in files_to_process:
                 path = os.path.join(folder, fname)
                 tasks.append((path, target_size))
-                task_info[path] = {"label": label, "fname": fname, "key": key}
+                task_info[path] = {"label": label, "key": key, "fname": fname}
 
         logger.info(f"Processing {len(tasks)} images in parallel...")
         with ProcessPoolExecutor() as executor:
@@ -103,13 +101,42 @@ class DataLoader:
             if features:
                 path = task_args[0]
                 info = task_info[path]
-                X_data.append(features)
-                y_data.append(info["label"])
-                file_names_list.append(info["fname"])
-                loaded_counts[info["key"]] += 1
+                key = info["key"]
+                data_by_class[key].append((features, info["label"]))
+                fnames_by_class[key].append(info["fname"])
+                loaded_counts[key] += 1
 
         logger.info(f"Loaded counts: {loaded_counts}")
-        return DataLoader._prepare_split(X_data, y_data, file_names_list, loaded_counts)
+
+        data = {
+            "X_train": {"real": [], "ai": []},
+            "y_train": {"real": [], "ai": []},
+            "X_test": {"real": [], "ai": []},
+            "y_test": {"real": [], "ai": []},
+            "loaded_counts": loaded_counts,
+        }
+
+        for key in ["real", "ai"]:
+            if not data_by_class[key]:
+                continue
+
+            features, labels = zip(*data_by_class[key])
+            filenames = fnames_by_class[key]
+            X_train, X_test, y_train, y_test, fn_train, fn_test = train_test_split(
+                features, labels, filenames, test_size=0.2, random_state=42
+            )
+
+            data["X_train"][key] = list(X_train)
+            data["y_train"][key] = list(y_train)
+            data["X_test"][key] = list(X_test)
+            data["y_test"][key] = list(y_test)
+
+            if "files" not in data:
+                data["files"] = {"train": {"real": [], "ai": []}, "test": {"real": [], "ai": []}}
+            data["files"]["train"][key] = list(fn_train)
+            data["files"]["test"][key] = list(fn_test)
+
+        return data
 
     @staticmethod
     def _load_mongo(config):
