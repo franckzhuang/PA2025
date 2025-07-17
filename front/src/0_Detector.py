@@ -94,9 +94,11 @@ if uploaded_file:
             with st.spinner("Evaluating..."):
                 try:
                     img_array = np.array(img.convert("RGB"), dtype=np.float32)
+                    _, params = client.get_model_details(model_name)
                     result = client.evaluate_model(
                         model_type=model_type,
                         model_name=model_name,
+                        params=params,
                         input_data=img_array.tolist()
                     )
 

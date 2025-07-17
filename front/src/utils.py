@@ -47,15 +47,17 @@ class ApiClient:
         resp.raise_for_status()
         return resp.json()
 
-    def evaluate_model(self, model_type, model_name, input_data):
+    def evaluate_model(self, model_type, model_name, params, input_data):
         url = f"{self.base_url}/evaluate/run"
         payload = {
             "model_type": model_type,
             "model_name": model_name,
+            "params": params,
             "input_data": input_data,
-        }
+        }        
         resp = self.session.post(url, json=payload, timeout=10)
         resp.raise_for_status()
+
         return resp.json()
 
     def save_model(self, job_id, name):
