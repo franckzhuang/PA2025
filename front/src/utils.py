@@ -29,6 +29,12 @@ class ApiClient:
         resp.raise_for_status()
         return resp.json()
 
+    def get_params_for_job(self, job_id):
+        url = f"{self.base_url}/train/{job_id}/params"
+        resp = self.session.get(url, timeout=self.timeout)
+        resp.raise_for_status()
+        return resp.json()
+
     def get_history(self):
         url = f"{self.base_url}/train"
         resp = self.session.get(url, timeout=self.timeout)

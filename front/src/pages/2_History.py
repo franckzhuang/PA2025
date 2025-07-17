@@ -82,37 +82,38 @@ try:
             job_details_row = filtered_df[
                 filtered_df["job_id"] == selected_job_id
             ].iloc[0]
+            job_dict = job_details_row.to_dict()
 
-            if "params" in job_details_row and pd.notna(job_details_row["params"]):
-                job_dict = job_details_row.to_dict()
-                model_type = job_dict.get("model_type")
+            if "params_file" in job_dict and pd.notna(job_dict["params_file"]):
+                try:
+                    params_content = client.get_params_for_job(selected_job_id)
 
-                export_data = {
-                    "model_type": model_type,
-                    "params": json.loads(job_dict.get("params", "{}")),
-                    "job": {
-                        k: v for k, v in job_dict.items() if k != "params"
+                    model_type = job_dict.get("model_type")
+                    export_data = {
+                        "model_type": model_type,
+                        "params": params_content,
+                        "job": {
+                            k: v for k, v in job_dict.items() if k != "params_file"
+                        }
                     }
-                }
+                    date_str = pd.to_datetime(job_dict.get("created_at")).strftime("%Y%m%d_%H%M%S")
+                    file_name = f"{date_str}_{model_type}_export.json"
 
-                date_str = pd.to_datetime(job_details_row.get("created_at")).strftime(
-                    "%Y%m%d_%H%M%S"
-                )
-                file_name = f"{date_str}_{model_type}_params.json"
-
-                st.download_button(
-                    label="📥 Download Model Params",
-                    data=json.dumps(export_data, indent=2, default=str).encode("utf-8"),
-                    file_name=file_name,
-                    mime="application/json",
-                )
+                    st.download_button(
+                        label="📥 Download Model Params",
+                        data=json.dumps(export_data, indent=2, default=str).encode("utf-8"),
+                        file_name=file_name,
+                        mime="application/json",
+                    )
+                except Exception as e:
+                    st.error(f"Could not fetch or process model parameters: {e}")
             else:
                 st.info("No downloadable parameters for this run.")
 
             st.subheader("💾 Save Model to Database")
 
-            if "params" not in job_details_row or not pd.notna(
-                job_details_row["params"]
+            if "params_file" not in job_details_row or not pd.notna(
+                job_details_row["params_file"]
             ):
                 st.info("Model can only be saved if the job is completed.")
             else:

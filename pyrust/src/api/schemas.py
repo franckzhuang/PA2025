@@ -93,7 +93,7 @@ class TrainingJob(BaseModel):
     created_at: datetime
     started_at: datetime = None
     finished_at: datetime = None
-    params: str | None = None
+    params_file: str | None = None
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
