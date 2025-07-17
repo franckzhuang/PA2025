@@ -40,7 +40,7 @@ with st.sidebar:
 def show_model_details():
     with st.spinner("Fetching model details..."):
         try:
-            details = client.get_model_details(model_name)
+            details, params = client.get_model_details(model_name)
 
             st.write("## General Information")
             st.write(f"**Model Name:** {details.get('model_name')}")
@@ -59,7 +59,7 @@ def show_model_details():
             st.json(details.get("job", {}).get("metrics"))
 
             st.write("## Model Parameters")
-            st.json(details.get("job", {}).get("params"))
+            st.json(params)
 
         except Exception as e:
             st.error(f"Error fetching model details: {e}")

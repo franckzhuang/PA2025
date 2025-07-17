@@ -66,11 +66,20 @@ class ApiClient:
         return resp.json()
 
     def get_model_details(self, model_name: str):
+
         res = requests.get(f"{self.base_url}/models/details/{model_name}")
         if res.status_code == 200:
-            return res.json()
+            model_json = res.json()
         else:
             raise Exception(f"Failed to get model details: {res.text}")
+                
+        res = requests.get(f"{self.base_url}/train/{model_json.get('job').get('job_id')}/params")
+        if res.status_code == 200:
+            params = res.json()
+        else:
+            raise Exception(res.text)
+                
+        return model_json, params
 
     def import_model(self, data: dict):
         url = f"{self.base_url}/training/import_model"

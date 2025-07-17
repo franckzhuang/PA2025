@@ -9,6 +9,7 @@ from pymongo.errors import PyMongoError
 from pyrust.src.api.service.evaluators.linear import evaluate_linear
 from pyrust.src.api.service.evaluators.mlp import evaluate_mlp
 from pyrust.src.api.service.evaluators.svm import evaluate_svm
+from pyrust.src.api.service.evaluators.rbf import evaluate_rbf
 from pyrust.src.database.mongo import MongoDB
 
 router = APIRouter()
@@ -107,6 +108,9 @@ def evaluate_model(
         return evaluate_mlp(params, input_data)
     elif stored_type == "SVM":
         return evaluate_svm(params, input_data)
+    elif stored_type == "RBF":
+        return evaluate_rbf(params, input_data)
+
 
     raise HTTPException(status_code=400, detail=f"Invalid model type: {stored_type}")
 
@@ -175,14 +179,6 @@ def get_model_details(
     if not job_doc:
         raise HTTPException(status_code=404, detail="Training job not found.")
     
-        
-    def safe_isoformat(value):
-        if isinstance(value, str):
-            return value
-        if isinstance(value, datetime):
-            return value.isoformat()
-        return None
-
     model_info = {
         "model_name": model_doc.get("name"),
         "model_type": model_doc.get("model_type"),
@@ -197,7 +193,6 @@ def get_model_details(
             "hyperparameters": job_doc.get("hyperparameters"),
             "image_config": job_doc.get("image_config"),
             "metrics": job_doc.get("metrics"),
-            "params": job_doc.get("params"),
         }
     }
     return model_info
