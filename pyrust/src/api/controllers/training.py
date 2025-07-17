@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from typing import List
 
 from fastapi import BackgroundTasks, Depends, APIRouter, HTTPException
@@ -42,7 +43,8 @@ def cleanup_old_model_params(collection):
 
     query = {
         "created_at": {"$lt": one_hour_ago},
-        "params_path": {"$exists": True}
+        "params_file": {"$exists": True},
+        "model_saved": {"$ne": True}
     }
     docs_to_cleanup = list(collection.find(query))
 
@@ -50,11 +52,17 @@ def cleanup_old_model_params(collection):
         return
 
     ids_to_update = []
+    base_path = Path(__file__).parent.parent.parent / "training_models"
+    if not base_path.exists():
+        logger.warning(f"Cleanup: Base path {base_path} does not exist. Skipping cleanup.")
+        return
 
     for doc in docs_to_cleanup:
-        path_str = doc.get("params_path")
+        path_str = doc.get("params_file")
         if not path_str:
             continue
+        path_str = str(base_path/ path_str)
+
 
         try:
             if os.path.exists(path_str):
@@ -71,9 +79,9 @@ def cleanup_old_model_params(collection):
     if ids_to_update:
         collection.update_many(
             {"_id": {"$in": ids_to_update}},
-            {"$unset": {"params_path": ""}}
+            {"$unset": {"params_file": ""}}
         )
-        logger.info(f"Cleanup: Removed params_path from {len(ids_to_update)} old jobs.")
+        logger.info(f"Cleanup: Removed params_file from {len(ids_to_update)} old jobs.")
 
 
 @router.post("/train/linear_classification", status_code=202)
@@ -182,12 +190,17 @@ def get_job_params(job_id: str, collection=Depends(get_mongo_collection)):
     if not job:
         raise HTTPException(status_code=404, detail="Job not found.")
 
-    params_path = job.get("params_path")
-    if not params_path:
+    params_file = job.get("params_file")
+    if not params_file:
+        logger.error(f"No params file path found for job_id: {job_id}")
         raise HTTPException(status_code=404, detail="No params file path found for this job.")
 
+    base_path = Path(__file__).parent.parent.parent / "training_models"
+    params_path = str(base_path / params_file)
+
     if not os.path.exists(params_path):
-        raise HTTPException(status_code=404, detail=f"Params file not found at path: {params_path}")
+        logger.error(f"Params file not found at path: {params_path}")
+        raise HTTPException(status_code=404, detail=f"Params file not found at path: {params_file}")
 
     try:
         with open(params_path, 'r') as f:

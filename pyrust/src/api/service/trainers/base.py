@@ -16,7 +16,7 @@ class BaseTrainer(ABC):
             self.collection = collection
 
             self.base_path = Path(__file__).parent.parent.parent.parent
-            self.models_path = self.base_path / "models/training_models"
+            self.models_path = self.base_path / "training_models"
             self.models_path.mkdir(parents=True, exist_ok=True)
 
             self.experiment_config = self._prepare_config(config)
@@ -89,10 +89,10 @@ class BaseTrainer(ABC):
                 self.model.to_json() if hasattr(self.model, "to_json") else None
             )
 
-            params_path = None
+            params_file = None
             if model_params:
                 file_path = self.models_path / f"{self.job_id}_params.json"
-                params_path = str(file_path)
+                params_file = str(file_path)
 
                 try:
                     with open(file_path, 'w') as f:
@@ -100,14 +100,15 @@ class BaseTrainer(ABC):
                             json.dump(model_params, f, indent=2)
                         else:
                             f.write(model_params)
-                    log_with_job_id(logger, self.job_id, f"Model parameters saved to {params_path}")
+                    log_with_job_id(logger, self.job_id, f"Model parameters saved to {params_file}")
                 except Exception as e:
                     log_with_job_id(logger, self.job_id, f"Failed to save model params to file: {e}", level=logging.ERROR)
-                    params_path = None
+                    params_file = None
 
             update_data = {"metrics": metrics}
-            if params_path:
-                update_data["params_path"] = params_path
+            if params_file:
+                update_data["params_file"] = params_file.split("/")[-1]
+                update_data["model_saved"] = False
 
             self._update_status(Status.SUCCESS, update_data)
 

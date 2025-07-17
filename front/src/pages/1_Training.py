@@ -349,16 +349,16 @@ if st.session_state.active_polling and st.session_state.job_id:
                     else:
                         st.write("No metrics to display.")
 
-                    if resp.get("params_path"):
+                    if resp.get("params_file"):
                         try:
                             params_content = client.get_params_for_job(st.session_state.job_id)
 
                             export_data = {
-                                "model_type": model_type,
+                                "model_type": resp.get("model_type"),
                                 "params": params_content,
                                 "job": resp.copy(),
                             }
-                            export_data["job"].pop("params_path", None)
+                            export_data["job"].pop("params_file", None)
                             export_data["job"].pop("params", None)
 
                             dt = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -368,6 +368,9 @@ if st.session_state.active_polling and st.session_state.job_id:
                                 data=json.dumps(export_data, indent=2).encode('utf-8'),
                                 file_name=fname,
                                 mime="application/json",
+                            )
+                            st.info(
+                                "💡 If you want to save this model to the database, please go to the **History** page."
                             )
                         except Exception as e:
                             st.error(f"Failed to fetch model params for export: {e}")

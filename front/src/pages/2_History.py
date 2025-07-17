@@ -84,7 +84,7 @@ try:
             ].iloc[0]
             job_dict = job_details_row.to_dict()
 
-            if "params_path" in job_dict and pd.notna(job_dict["params_path"]):
+            if "params_file" in job_dict and pd.notna(job_dict["params_file"]):
                 try:
                     params_content = client.get_params_for_job(selected_job_id)
 
@@ -93,7 +93,7 @@ try:
                         "model_type": model_type,
                         "params": params_content,
                         "job": {
-                            k: v for k, v in job_dict.items() if k != "params_path"
+                            k: v for k, v in job_dict.items() if k != "params_file"
                         }
                     }
                     date_str = pd.to_datetime(job_dict.get("created_at")).strftime("%Y%m%d_%H%M%S")
@@ -112,8 +112,8 @@ try:
 
             st.subheader("💾 Save Model to Database")
 
-            if "params_path" not in job_details_row or not pd.notna(
-                job_details_row["params_path"]
+            if "params_file" not in job_details_row or not pd.notna(
+                job_details_row["params_file"]
             ):
                 st.info("Model can only be saved if the job is completed.")
             else:
