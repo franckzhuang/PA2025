@@ -19,7 +19,8 @@ from pyrust.src.api.service.trainers.svm import SVMTrainer
 from pyrust.src.database.mongo import MongoDB
 from pyrust.src.api.service.trainers.linear import LinearClassificationTrainer
 from pyrust.src.api.service.trainers.mlp import MLPTrainer
-from pyrust.src.utils.logger import logger
+from pyrust.src.utils.logger import logger, log_with_job_id
+
 
 router = APIRouter()
 
@@ -227,9 +228,9 @@ def import_model(
     training_jobs=Depends(get_mongo_collection),
     saved_models=Depends(get_saved_models_collection)
 ):
-    job = data.get("job")
+    job = data.get("job_details")
     if not job:
-        return {"status": "error", "message": "Missing 'job' section in payload."}
+        return {"status": "error", "message": "Missing 'job_details' section in payload."}
 
     job_id = job.get("job_id")
     if not job_id:
@@ -237,25 +238,52 @@ def import_model(
 
     if training_jobs.find_one({"job_id": job_id}):
         return {"status": "exists", "message": "A training job with this job_id already exists."}
-    
+
     raw_params = data.get("params")
-    if isinstance(raw_params, (dict, list)):
-        params_str = json.dumps(raw_params, indent=2)
-    else:
-        params_str = str(raw_params)
+    params_file = None
+    if raw_params is not None:
+        models_path = Path(__file__).parent.parent.parent / "training_models"
+        models_path.mkdir(parents=True, exist_ok=True)
+        file_path = f"{job_id}_params.json"
+        params_file = str(file_path)
+
+        try:
+            with open(models_path / file_path, "w") as f:
+                if isinstance(raw_params, (dict, list)):
+                    json.dump(raw_params, f, indent=2)
+                else:
+                    f.write(str(raw_params))
+            log_with_job_id(logger, job_id, f"Model parameters saved to {params_file}")
+        except Exception as e:
+            log_with_job_id(logger, job_id, f"Failed to save model params to file: {e}", level=logging.ERROR)
+            params_file = None
+
+    def extract_prefix(prefix: str) -> dict:
+        extracted = {}
+        for k, v in job.items():
+            if k.startswith(prefix + "."):
+                subkey = k[len(prefix) + 1:]
+                extracted[subkey] = v
+        return extracted
+
+    image_config = extract_prefix("image_config")
+    hyperparameters = extract_prefix("hyperparameters")
+    metrics = extract_prefix("metrics")
 
     training_doc = {
         "job_id": job_id,
         "model_type": job.get("model_type", "UNKNOWN").upper(),
+        "model_saved": True,
         "status": job.get("status", "SUCCESS"),
-        "params": params_str,
+        "params_file": params_file,
         "created_at": job.get("created_at"),
         "started_at": job.get("started_at"),
         "finished_at": job.get("finished_at"),
-        "hyperparameters": job.get("hyperparameters"),
-        "image_config": job.get("image_config"),
-        "metrics": job.get("metrics")
+        "hyperparameters": hyperparameters,
+        "image_config": image_config,
+        "metrics": metrics,
     }
+
     training_jobs.insert_one(training_doc)
 
     saved_model_doc = {
