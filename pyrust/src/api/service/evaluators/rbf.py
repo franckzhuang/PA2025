@@ -6,7 +6,6 @@ def evaluate_rbf(json_str, input_data):
 
     if all(k in config for k in ("x", "y", "gamma")):
         model = RBFNaive.from_json(json_str)
-        # Ce modèle attend 1 seul point à la fois
         raw_preds = [model.predict(x) for x in input_data] if isinstance(input_data[0], (list, tuple)) else [model.predict(input_data)]
     elif all(k in config for k in ("centers", "weights", "gamma")):
         model = RBFKMeans.from_json(json_str)
