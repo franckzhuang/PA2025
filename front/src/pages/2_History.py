@@ -3,6 +3,7 @@ import streamlit as st
 import pandas as pd
 import json
 from dotenv import load_dotenv
+import plotly.express as px
 
 from utils import ApiClient
 
@@ -71,99 +72,168 @@ try:
 
             st.dataframe(display_df, use_container_width=True)
 
+            st.divider()
             st.header("🔬 Inspect a Specific Run")
 
-            job_ids = filtered_df["job_id"].tolist()
-            selected_job_id = st.selectbox(
-                "Select a Job ID to see full details", options=job_ids
-            )
-
-        if selected_job_id:
-            job_details_row = filtered_df[
-                filtered_df["job_id"] == selected_job_id
-            ].iloc[0]
-            job_dict = job_details_row.to_dict()
-
-            if "params_file" in job_dict and pd.notna(job_dict["params_file"]):
-                try:
-                    params_content = client.get_params_for_job(selected_job_id)
-
-                    model_type = job_dict.get("model_type")
-                    export_data = {
-                        "model_type": model_type,
-                        "params": params_content,
-                        "job": {
-                            k: v for k, v in job_dict.items() if k != "params_file"
-                        }
-                    }
-                    date_str = pd.to_datetime(job_dict.get("created_at")).strftime("%Y%m%d_%H%M%S")
-                    file_name = f"{date_str}_{model_type}_export.json"
-
-                    st.download_button(
-                        label="📥 Download Model Params",
-                        data=json.dumps(export_data, indent=2, default=str).encode("utf-8"),
-                        file_name=file_name,
-                        mime="application/json",
-                    )
-                except Exception as e:
-                    st.error(f"Could not fetch or process model parameters: {e}")
+            if filtered_df.empty:
+                st.info("No runs to inspect based on current filters.")
             else:
-                st.info("No downloadable parameters for this run.")
+                job_ids = filtered_df["job_id"].tolist()
+                selected_job_id = st.selectbox(
+                    "Select a Job ID to see full details", options=job_ids
+                )
 
-            st.subheader("💾 Save Model to Database")
+                if selected_job_id:
+                    job_details_row = filtered_df[
+                        filtered_df["job_id"] == selected_job_id
+                    ].iloc[0]
 
-            if "params_file" not in job_details_row or not pd.notna(
-                job_details_row["params_file"]
-            ):
-                st.info("Model can only be saved if the job is completed.")
-            else:
-                model_name_input = st.text_input("Model Name", key="model_name_input")
+                    st.subheader("Actions")
+                    action_cols = st.columns(2)
 
-                if st.button("✅ Save Model"):
-                    if not model_name_input.strip():
-                        st.error("Please enter a model name before saving.")
-                    else:
-                        try:
-                            response = client.save_model(
-                                job_id=selected_job_id, name=model_name_input.strip()
-                            )
-
-                            if response.get("status") == "created":
-                                st.success("Model saved successfully! 🎉")
-                                st.balloons()
-                            elif response.get("status") == "exists":
-                                st.warning("A model with this name already exists.")
-                            elif response.get("status") == "not_found":
-                                st.error("The associated training job was not found.")
-                            elif response.get("status") == "error":
-                                st.error(
-                                    f"Error saving model: {response.get('message')}"
+                    with action_cols[0]:
+                        if "params_file" in job_details_row and pd.notna(
+                            job_details_row["params_file"]
+                        ):
+                            try:
+                                params_content = client.get_params_for_job(
+                                    selected_job_id
                                 )
-                            else:
-                                st.error(f"Unexpected response: {response}")
-                        except Exception as e:
-                            st.error(f"Failed to save model: {e}")
+                                job_dict_cleaned = job_details_row.dropna().to_dict()
+                                model_type = job_dict_cleaned.get("model_type", "model")
+                                export_data = {
+                                    "model_type": model_type,
+                                    "params": params_content,
+                                    "job_details": job_dict_cleaned,
+                                }
+                                date_str = pd.to_datetime(
+                                    job_dict_cleaned.get("created_at")
+                                ).strftime("%Y%m%d_%H%M%S")
+                                file_name = f"{date_str}_{model_type}_export.json"
+                                st.info("You can export the model parameters and job details as file.")
+                                st.download_button(
+                                    label="📥 Download Model Export",
+                                    data=json.dumps(
+                                        export_data, indent=2, default=str
+                                    ).encode("utf-8"),
+                                    file_name=file_name,
+                                    mime="application/json",
+                                )
+                            except Exception as e:
+                                st.error(f"Download failed: {e}")
+                        else:
+                            st.info("No downloadable parameters.")
 
-            st.divider()
+                    with action_cols[1]:
+                        if "params_file" not in job_details_row or not pd.notna(
+                            job_details_row["params_file"]
+                        ):
+                            st.info("Model cannot be saved.")
+                        else:
+                            model_name_input = st.text_input(
+                                "Enter a unique name to save the model to database",
+                            )
+                            if st.button("✅ Save Model"):
+                                if not model_name_input.strip():
+                                    st.error("Please enter a model name before saving.")
+                                else:
+                                    try:
+                                        response = client.save_model(
+                                            job_id=selected_job_id, name=model_name_input.strip()
+                                        )
 
-            col1, col2 = st.columns(2)
-            with col1:
-                st.subheader("⚙️ Configuration")
-                config_data = {
-                    k.replace("config.", ""): v
-                    for k, v in job_details_row.to_dict().items()
-                    if "config." in k
-                }
-                st.json(config_data)
-            with col2:
-                st.subheader("📈 Metrics")
-                metrics_data = {
-                    k.replace("metrics.", ""): v
-                    for k, v in job_details_row.to_dict().items()
-                    if "metrics." in k
-                }
-                st.json(metrics_data)
+                                        if response.get("status") == "created":
+                                            st.success("Model saved successfully! 🎉")
+                                            st.balloons()
+                                        elif response.get("status") == "exists":
+                                            st.warning("A model with this name already exists.")
+                                        elif response.get("status") == "not_found":
+                                            st.error("The associated training job was not found.")
+                                        elif response.get("status") == "error":
+                                            st.error(
+                                                f"Error saving model: {response.get('message')}"
+                                            )
+                                        else:
+                                            st.error(f"Unexpected response: {response}")
+                                    except Exception as e:
+                                        st.error(f"Failed to save model: {e}")
 
+                    st.divider()
+                    with st.expander("⚙️ Configuration"):
+                        config_data = {
+                            k.replace("config.", ""): v
+                            for k, v in job_dict_cleaned.items()
+                            if "config." in k
+                        }
+                        st.json(config_data)
+
+                    with st.expander("📈 Metrics", expanded=True):
+                        metrics = {
+                            k.replace("metrics.", ""): v
+                            for k, v in job_details_row.to_dict().items()
+                            if "metrics." in k and pd.notna(v)
+                        }
+                        if not metrics:
+                            st.write("No metrics available for this run.")
+                        else:
+                            m_col1, m_col2, m_col3 = st.columns(3)
+                            m_col1.metric(
+                                "🎯 Train Accuracy",
+                                f"{metrics.get('train_accuracy', 0):.2f}%",
+                            )
+                            m_col2.metric(
+                                "🧪 Test Accuracy",
+                                f"{metrics.get('test_accuracy', 0):.2f}%",
+                            )
+                            m_col3.metric(
+                                "⏱️ Training duration",
+                                f"{metrics.get('training_duration', 0):.2f}s",
+                            )
+                            st.divider()
+                            col_pie1, col_pie2 = st.columns(2)
+                            with col_pie1:
+                                df_counts = pd.DataFrame({
+                                    'type': ['Real', 'AI'],
+                                    'count': [metrics.get('len_real_images', 0), metrics.get('len_ai_images', 0)]
+                                })
+                                fig1 = px.pie(df_counts, names='type', values='count',
+                                              title='📊 Image Source Distribution')
+                                st.plotly_chart(fig1, use_container_width=True)
+
+                            with col_pie2:
+                                df_samples = pd.DataFrame({
+                                    'type': ['Train', 'Test'],
+                                    'count': [metrics.get('train_samples', 0), metrics.get('test_samples', 0)]
+                                })
+                                fig2 = px.pie(df_samples, names='type', values='count',
+                                              title='📚 Data Split Distribution')
+                                st.plotly_chart(fig2, use_container_width=True)
+
+                            if "train_losses" in metrics and isinstance(
+                                metrics.get("train_losses"), list
+                            ):
+                                st.divider()
+                                loss_col, acc_col = st.columns(2)
+                                with loss_col:
+                                    df_losses = pd.DataFrame(
+                                        {
+                                            "Train Loss": metrics["train_losses"],
+                                            "Test Loss": metrics.get("test_losses", []),
+                                        }
+                                    )
+                                    st.line_chart(df_losses)
+                                with acc_col:
+                                    df_accuracies = pd.DataFrame(
+                                        {
+                                            "Train Accuracy": metrics[
+                                                "train_accuracies"
+                                            ],
+                                            "Test Accuracy": metrics.get(
+                                                "test_accuracies", []
+                                            ),
+                                        }
+                                    )
+                                    st.line_chart(df_accuracies)
 
 except Exception as e:
-    st.error(f"Failed to fetch or display history: {e}")
+    st.error(f"An unexpected error occurred: {e}")
