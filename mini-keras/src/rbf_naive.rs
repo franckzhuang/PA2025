@@ -3,11 +3,7 @@ use crate::utils::{distance, invert_matrix, matrix_vector_product};
 
 /// Sigmoid for classification.
 fn sigmoid(x: f64) -> f64 {
-    // use sign function
-    if x>= 0.0 {
-        return 1.0
-    }
-    0.0
+    1.0 / (1.0 + (-x).exp())
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

@@ -10,7 +10,7 @@ import json
 from pyrust.src.api.service.evaluators.linear import evaluate_linear
 from pyrust.src.api.service.evaluators.mlp import evaluate_mlp
 from pyrust.src.api.service.evaluators.svm import evaluate_svm
-# from pyrust.src.api.service.evaluators.rbf import evaluate_rbf
+from pyrust.src.api.service.evaluators.rbf import evaluate_rbf
 from pyrust.src.database.mongo import MongoDB
 
 router = APIRouter()

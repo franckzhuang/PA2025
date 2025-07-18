@@ -129,7 +129,7 @@ class BaseTrainer(ABC):
 
             update_data = {"metrics": metrics}
             if params_file:
-                update_data["params_file"] = params_file.split("/")[-1]
+                update_data["params_file"] = Path(params_file).name
                 update_data["model_saved"] = False
 
             self._update_status(Status.SUCCESS, update_data)
