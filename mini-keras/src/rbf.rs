@@ -3,13 +3,9 @@ use serde::{Deserialize, Serialize};
 use crate::kmeans::KMeans;
 use crate::utils::{distance, transpose, matrix_multiply, invert_matrix, matrix_vector_product};
 
-/// Sigmoid activation
+/// Sigmoid for classification.
 fn sigmoid(x: f64) -> f64 {
-    // use sign function
-    if x>= 0.0 {
-        return 1.0
-    }
-    0.0
+    1.0 / (1.0 + (-x).exp())
 }
 
 

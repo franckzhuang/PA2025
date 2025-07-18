@@ -19,7 +19,8 @@ from pyrust.src.api.service.trainers.svm import SVMTrainer
 from pyrust.src.database.mongo import MongoDB
 from pyrust.src.api.service.trainers.linear import LinearClassificationTrainer
 from pyrust.src.api.service.trainers.mlp import MLPTrainer
-from pyrust.src.utils.logger import logger
+from pyrust.src.utils.logger import logger, log_with_job_id
+
 
 router = APIRouter()
 
@@ -239,16 +240,29 @@ def import_model(
         return {"status": "exists", "message": "A training job with this job_id already exists."}
     
     raw_params = data.get("params")
-    if isinstance(raw_params, (dict, list)):
-        params_str = json.dumps(raw_params, indent=2)
-    else:
-        params_str = str(raw_params)
+    params_file = None
+    if raw_params is not None:
+        models_path = Path("models")
+        models_path.mkdir(parents=True, exist_ok=True)
+        file_path = models_path / f"{job_id}_params.json"
+        params_file = str(file_path)
+
+        try:
+            with open(file_path, "w") as f:
+                if isinstance(raw_params, (dict, list)):
+                    json.dump(raw_params, f, indent=2)
+                else:
+                    f.write(str(raw_params))
+            log_with_job_id(logger, job_id, f"Model parameters saved to {params_file}")
+        except Exception as e:
+            log_with_job_id(logger, job_id, f"Failed to save model params to file: {e}", level=logging.ERROR)
+            params_file = None
 
     training_doc = {
         "job_id": job_id,
         "model_type": job.get("model_type", "UNKNOWN").upper(),
         "status": job.get("status", "SUCCESS"),
-        "params": params_str,
+        "params_file": params_file,
         "created_at": job.get("created_at"),
         "started_at": job.get("started_at"),
         "finished_at": job.get("finished_at"),
