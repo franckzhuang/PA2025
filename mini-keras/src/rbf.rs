@@ -1,19 +1,16 @@
 use rand::prelude::SliceRandom;
-
+use serde::{Deserialize, Serialize};
 use crate::kmeans::KMeans;
 use crate::utils::{distance, transpose, matrix_multiply, invert_matrix, matrix_vector_product};
 
-/// Sigmoid activation
+/// Sigmoid for classification.
 fn sigmoid(x: f64) -> f64 {
-    // use sign function
-    if x>= 0.0 {
-        return 1.0
-    }
-    0.0
+    1.0 / (1.0 + (-x).exp())
 }
 
 
 /// RBF using k-means centroids as centers
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct RBFKMeans {
 
     centers: Vec<Vec<f64>>,
@@ -63,7 +60,6 @@ impl RBFKMeans {
             let basis = (-self.gamma * distance(x_new, &self.centers[j])).exp();
             out += self.weights[j] * basis;
         }
-        println!("task: {}", self.is_class);
         if self.is_class {
             sigmoid(out)
         } else {

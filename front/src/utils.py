@@ -29,6 +29,12 @@ class ApiClient:
         resp.raise_for_status()
         return resp.json()
 
+    def get_params_for_job(self, job_id):
+        url = f"{self.base_url}/train/{job_id}/params"
+        resp = self.session.get(url, timeout=self.timeout)
+        resp.raise_for_status()
+        return resp.json()
+
     def get_history(self):
         url = f"{self.base_url}/train"
         resp = self.session.get(url, timeout=self.timeout)
@@ -41,15 +47,17 @@ class ApiClient:
         resp.raise_for_status()
         return resp.json()
 
-    def evaluate_model(self, model_type, model_name, input_data):
+    def evaluate_model(self, model_type, model_name, params, input_data):
         url = f"{self.base_url}/evaluate/run"
         payload = {
             "model_type": model_type,
             "model_name": model_name,
+            "params": params,
             "input_data": input_data,
-        }
+        }        
         resp = self.session.post(url, json=payload, timeout=10)
         resp.raise_for_status()
+
         return resp.json()
 
     def save_model(self, job_id, name):
@@ -60,11 +68,20 @@ class ApiClient:
         return resp.json()
 
     def get_model_details(self, model_name: str):
+
         res = requests.get(f"{self.base_url}/models/details/{model_name}")
         if res.status_code == 200:
-            return res.json()
+            model_json = res.json()
         else:
             raise Exception(f"Failed to get model details: {res.text}")
+                
+        res = requests.get(f"{self.base_url}/train/{model_json.get('job').get('job_id')}/params")
+        if res.status_code == 200:
+            params = res.json()
+        else:
+            raise Exception(res.text)
+                
+        return model_json, params
 
     def import_model(self, data: dict):
         url = f"{self.base_url}/training/import_model"

@@ -38,15 +38,28 @@ pub struct PyRBFNaive {
 #[pymethods]
 impl PyRBFNaive {
     #[new]
-    fn new(x: Vec<Vec<f64>>, y: Vec<f64>, gamma: f64, is_class: bool) -> PyResult<Self> {
-        let model = RustRBFNaive::new(x, y, gamma, is_class);
+    fn new(x: Vec<Vec<f64>>, y: Vec<f64>, gamma: f64, is_classification: bool) -> PyResult<Self> {
+        let model = RustRBFNaive::new(x, y, gamma, is_classification);
         Ok(PyRBFNaive { model })
     }
 
     fn predict(&self, x_new: Vec<f64>) -> PyResult<f64> {
         Ok(self.model.predict(&x_new))
     }
+
+    fn to_json(&self) -> PyResult<String> {
+        serde_json::to_string_pretty(&self.model)
+            .map_err(|e| PyValueError::new_err(e.to_string()))
+    }
+
+    #[staticmethod]
+    fn from_json(json_str: String) -> PyResult<Self> {
+        let model: RustRBFNaive = serde_json::from_str(&json_str)
+            .map_err(|e| PyValueError::new_err(e.to_string()))?;
+        Ok(PyRBFNaive { model })
+    }
 }
+
 
 #[pyclass(name="RBFKMeans")]
 pub struct PyRBFKMeans {
@@ -56,13 +69,25 @@ pub struct PyRBFKMeans {
 #[pymethods]
 impl PyRBFKMeans {
     #[new]
-    fn new(x: Vec<Vec<f64>>, y: Vec<f64>, k: usize, gamma: f64, max_iters: usize, is_class: bool) -> PyResult<Self> {
-        let model = RustRBFKmeans::new(x, y, k, gamma, max_iters, is_class);
+    fn new(x: Vec<Vec<f64>>, y: Vec<f64>, k: usize, gamma: f64, max_iters: usize, is_classification: bool) -> PyResult<Self> {
+        let model = RustRBFKmeans::new(x, y, k, gamma, max_iters, is_classification);
         Ok(PyRBFKMeans { model })
     }
 
     fn predict(&self, x_new: Vec<f64>) -> PyResult<f64> {
         Ok(self.model.predict(&x_new))
+    }
+
+    fn to_json(&self) -> PyResult<String> {
+        serde_json::to_string_pretty(&self.model)
+            .map_err(|e| PyValueError::new_err(e.to_string()))
+    }
+
+    #[staticmethod]
+    fn from_json(json_str: String) -> PyResult<Self> {
+        let model: RustRBFKmeans = serde_json::from_str(&json_str)
+            .map_err(|e| PyValueError::new_err(e.to_string()))?;
+        Ok(PyRBFKMeans { model })
     }
 }
 
@@ -193,11 +218,20 @@ impl PyMLP {
         Ok(self.model.predict(&x))
     }
 
-    fn fit(&mut self, x_train: Vec<Vec<f64>>, y_train: Vec<Vec<f64>> , x_test:Vec<Vec<f64>>, y_test:Vec<Vec<f64>>, epochs: usize, lr : f64) -> PyResult<Vec<Vec<f64>>> {
-        let train_losses = self.model.train(&x_train, &y_train, &x_test, &y_test, epochs, lr);
-        Ok(train_losses)
+    fn fit(&mut self, x_train: Vec<Vec<f64>>, y_train: Vec<f64>, x_test:Vec<Vec<f64>>, y_test:Vec<f64>, epochs: usize, lr : f64) -> PyResult<()> {
+        self.model.train(&x_train, &y_train, &x_test, &y_test, epochs, lr);
+        Ok(())
 
     }
+
+    #[getter]
+    fn train_losses(&self) -> Vec<f64> { self.model.train_losses.clone() }
+    #[getter]
+    fn test_losses(&self)  -> Vec<f64> { self.model.test_losses.clone()  }
+    #[getter]
+    fn train_accuracies(&self) -> Vec<f64> { self.model.train_accuracies.clone() }
+    #[getter]
+    fn test_accuracies(&self)  -> Vec<f64> { self.model.test_accuracies.clone()  }
 
     fn to_json(&self) -> PyResult<String> {
         serde_json::to_string_pretty(&self.model)
@@ -211,10 +245,6 @@ impl PyMLP {
         Ok(PyMLP { model })
     }
 }
-
-
-
-
 
 #[pyclass(name = "SVM")]
 struct PySVM {

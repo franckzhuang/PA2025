@@ -23,8 +23,10 @@ class MLPTrainer(BaseTrainer):
             activations=self.experiment_config["activations"],
         )
         self.model.fit(
-            data["X_train"],
-            data["y_train"],
+            x_train=data["X_train"],
+            y_train=data["y_train"],
+            x_test=data["X_test"],
+            y_test=data["y_test"],
             lr=self.experiment_config["learning_rate"],
             epochs=self.experiment_config["epochs"],
         )
@@ -56,4 +58,8 @@ class MLPTrainer(BaseTrainer):
             "len_real_images": data["loaded_counts"]["real"],
             "len_ai_images": data["loaded_counts"]["ai"],
             "total_images": len(data["X_train"]) + len(data["X_test"]),
+            "train_losses": self.model.train_losses,
+            "test_losses": self.model.test_losses,
+            "train_accuracies": self.model.train_accuracies,
+            "test_accuracies": self.model.test_accuracies,
         }

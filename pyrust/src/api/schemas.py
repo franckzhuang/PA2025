@@ -31,11 +31,10 @@ class MLPParams(ImageClassificationParams):
     activations: List[str] = ["linear", "linear"]
     epochs: int = 1000
 
-
-class KMeansParams(ImageClassificationParams):
-    n_clusters: int = 2
-    max_iterations: int = 300
-
+class RBFParams(ImageClassificationParams):
+    k: Optional[int] = None
+    gamma: float = 0.01
+    max_iterations: Optional[int] = None
 
 # ----------------------------------
 # History
@@ -94,7 +93,7 @@ class TrainingJob(BaseModel):
     created_at: datetime
     started_at: datetime = None
     finished_at: datetime = None
-    params: str | None = None
+    params_file: str | None = None
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,

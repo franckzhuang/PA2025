@@ -155,6 +155,10 @@ impl Dense {
 pub struct MLP {
     layers: Vec<Dense>,
     is_classification: bool,
+    pub train_losses: Vec<f64>,
+    pub test_losses: Vec<f64>,
+    pub train_accuracies: Vec<f64>,
+    pub test_accuracies: Vec<f64>,
 }
 
 impl MLP {
@@ -182,13 +186,9 @@ impl MLP {
                  y_test: &[Vec<f64>],   // Changed from &[f64] to &[Vec<f64>]
                  epochs: usize,
                  lr: f64
-    ) -> Vec<Vec<f64>> {
-        let mut train_losses:Vec<f64> = Vec::new();
-        let mut test_losses:Vec<f64> = Vec::new();
-        let mut train_accuracies: Vec<f64> = Vec::new();
-        let mut test_accuracies: Vec<f64> = Vec::new();
+    ) {
         for _ in 0..epochs {
-             
+
             let mut total_train_loss: f64 = 0.0;
             let mut total_train_accuracy: f64 = 0.0;
 
@@ -209,7 +209,7 @@ impl MLP {
                 for layer in self.layers.iter_mut().rev() {
                     deltas = layer.backward(&deltas, lr);
                 }
-                
+
                 // accumulate loss
                 let train_loss: f64 = outs.iter().zip(yi.iter())
                     .map(|(&out, &target)| (out - target).powi(2))
@@ -226,14 +226,16 @@ impl MLP {
             }
             // average loss for this epoch
             total_train_loss /= x_train.len() as f64;
-            train_losses.push(total_train_loss);
+            self.train_losses.push(total_train_loss);
             // compute train accuracy
             total_train_accuracy /= x_train.len() as f64;
             train_accuracies.push(total_train_accuracy);
             
             
 
-            
+
+
+
             
             // EVAL
             
@@ -263,8 +265,8 @@ impl MLP {
             }
             // average loss for this epoch
             total_test_loss /= x_test.len() as f64;
-            test_losses.push(total_test_loss);
-            
+            self.test_losses.push(total_test_loss);
+
             // compute test accuracy
             total_test_accuracy /= x_test.len() as f64;
             test_accuracies.push(total_test_accuracy);

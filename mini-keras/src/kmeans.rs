@@ -1,3 +1,4 @@
+use serde::{Serialize, Deserialize};
 use rand::seq::SliceRandom;
 use crate::utils::{distance};
 

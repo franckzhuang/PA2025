@@ -1,14 +1,12 @@
+use serde::{Deserialize, Serialize};
 use crate::utils::{distance, invert_matrix, matrix_vector_product};
 
 /// Sigmoid for classification.
 fn sigmoid(x: f64) -> f64 {
-    // use sign function
-    if x>= 0.0 {
-        return 1.0
-    }
-    0.0
+    1.0 / (1.0 + (-x).exp())
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct RBFNaive {
     x: Vec<Vec<f64>>,   // training inputs
     y: Vec<f64>,        // training targets
