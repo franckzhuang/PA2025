@@ -211,7 +211,7 @@ impl MLP {
                 }
 
                 // accumulate loss
-                let train_loss: f64 = outs.iter().zip(yi.iter())
+                train_loss: f64 = outs.iter().zip(yi.iter())
                     .map(|(&out, &target)| (out - target).powi(2))
                     .sum::<f64>() / outs.len() as f64;
                 total_train_loss += train_loss;
@@ -229,7 +229,7 @@ impl MLP {
             self.train_losses.push(total_train_loss);
             // compute train accuracy
             total_train_accuracy /= x_train.len() as f64;
-            train_accuracies.push(total_train_accuracy);
+            self.train_accuracies.push(total_train_accuracy);
             
             
 
@@ -269,15 +269,9 @@ impl MLP {
 
             // compute test accuracy
             total_test_accuracy /= x_test.len() as f64;
-            test_accuracies.push(total_test_accuracy);
+            self.test_accuracies.push(total_test_accuracy);
         }
-        // concatenate train_losses, test_losses, train_accuracies, test_accuracies
-        let mut results: Vec<Vec<f64>> = Vec::new();
-        results.push(train_losses);
-        results.push(test_losses);
-        results.push(train_accuracies);
-        results.push(test_accuracies);
-        results
+        
         
     }
 }
