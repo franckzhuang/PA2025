@@ -2,8 +2,14 @@ use std::f64;
 use serde::{Serialize, Deserialize};
 use rand::Rng;
 
-use crate::utils::batch_accuracy_mlp;
-use crate::utils::accuracy_mlp;
+// use crate::utils::batch_accuracy_mlp;
+/// assuming classification task, compute accuracy for one input x and true label y_true
+pub fn accuracy_mlp(
+    x: f64,
+    y_true: f64
+) -> f64 {
+    (x - y_true).abs()
+}
 
 /// returns a random f64 in [-1.0, 1.0]
 fn random() -> f64 {
@@ -157,35 +163,14 @@ pub struct MLP {
 
 impl MLP {
     /// Create a new MLP from a list of layers
-    pub fn new(mut layers: Vec<Dense>, is_classification: bool) -> Self {
-        // if classification :
-        // ensure last layer has 1 neuron
-        // and has sigmoid activation
-        // if not add a Dense layer with 1 neuron and sigmoid activation
-        if is_classification && !layers.is_empty() {
-            let last_layer = layers.last().unwrap();
-            if last_layer.neurons.len() != 1 || matches!(last_layer.activation, Activation::Linear) {
-                // let mut new_layers = layers;
-                layers.push(Dense::new(last_layer.neurons.len(), 1, Activation::Sigmoid));
-                return MLP {
-                    layers,
-                    is_classification: true ,
-                    train_losses: Vec::new(),
-                    test_losses: Vec::new(),
-                    train_accuracies: Vec::new(),
-                    test_accuracies: Vec::new(),
-                };
-            }
-        }
-
-        MLP {
-            layers,
-            is_classification,
+    pub fn new(layers: Vec<Dense>, is_classification: bool) -> Self {
+        // For multi-output classification, don't automatically add single-output layer
+        // Only add single-output layer if explicitly needed for binary classification
+        MLP { layers, is_classification, 
             train_losses: Vec::new(),
             test_losses: Vec::new(),
             train_accuracies: Vec::new(),
-            test_accuracies: Vec::new(),
-        }
+            test_accuracies: Vec::new() }
     }
 
     /// Predict outputs for a single input sample
@@ -200,9 +185,9 @@ impl MLP {
     /// Train on dataset x and targets y using SGD and MSE loss
     pub fn train(&mut self,
                  x_train: &[Vec<f64>],
-                 y_train: &[f64],
+                 y_train: &[Vec<f64>],  // Changed from &[f64] to &[Vec<f64>]
                  x_test: &[Vec<f64>],
-                 y_test: &[f64],
+                 y_test: &[Vec<f64>],   // Changed from &[f64] to &[Vec<f64>]
                  epochs: usize,
                  lr: f64
     ) {
@@ -211,16 +196,18 @@ impl MLP {
             let mut total_train_loss: f64 = 0.0;
             let mut total_train_accuracy: f64 = 0.0;
 
-            for (xi, &yi) in x_train.iter().zip(y_train.iter()) {
+            for (xi, yi) in x_train.iter().zip(y_train.iter()) {
                 // forward pass
                 let mut activations = xi.clone();
                 for layer in self.layers.iter_mut() {
                     activations = layer.forward(&activations);
                 }
-                // compute MSE gradient
+                // compute MSE gradient for multiple outputs
                 let outs = &activations;
-                let deltas: Vec<f64> = outs.iter().map(|&out| 2.0 * (out - yi)).collect();
-
+                let deltas: Vec<f64> = outs.iter().zip(yi.iter())
+                    .map(|(&out, &target)| 2.0 * (out - target))
+                    .collect();
+                
                 // backward pass
                 let mut deltas = deltas;
                 for layer in self.layers.iter_mut().rev() {
@@ -228,25 +215,27 @@ impl MLP {
                 }
 
                 // accumulate loss
-                let train_loss: f64 = outs.iter().map(|&out| (out - yi).powi(2)).sum::<f64>() / outs.len() as f64;
+                let train_loss: f64 = outs.iter().zip(yi.iter())
+                    .map(|(&out, &target)| (out - target).powi(2))
+                    .sum::<f64>() / outs.len() as f64;
                 total_train_loss += train_loss;
-
-
-                // compute accuracy
-                if self.is_classification {
-                    total_train_accuracy += accuracy_mlp(activations[0], yi);
-
-                }
+                
+                
+                // compute accuracy for either binary or regression by looping through outputs
+                let train_accuracy = outs.iter().zip(yi.iter())
+                    .map(|(&out, &target)| accuracy_mlp(out, target))
+                    .sum::<f64>() / outs.len() as f64;
+                total_train_accuracy += train_accuracy;
 
             }
             // average loss for this epoch
             total_train_loss /= x_train.len() as f64;
             self.train_losses.push(total_train_loss);
             // compute train accuracy
-            if self.is_classification {
-                total_train_accuracy /= x_train.len() as f64;
-                self.train_accuracies.push(total_train_accuracy);
-            }
+            total_train_accuracy /= x_train.len() as f64;
+            self.train_accuracies.push(total_train_accuracy);
+            
+            
 
 
 
@@ -257,7 +246,7 @@ impl MLP {
             let mut total_test_loss: f64 = 0.0;
             let mut total_test_accuracy: f64 = 0.0;
 
-            for (xi, &yi) in x_test.iter().zip(y_test.iter()) {
+            for (xi, yi) in x_test.iter().zip(y_test.iter()) {
                 // forward pass
                 let mut activations = xi.clone();
                 for layer in self.layers.iter_mut() {
@@ -265,12 +254,17 @@ impl MLP {
                 }
                 // compute MSE loss
                 let outs = &activations;
-                let test_loss: f64 = outs.iter().map(|&out| (out - yi).powi(2)).sum::<f64>() / outs.len() as f64;
+                let test_loss: f64 = outs.iter().zip(yi.iter())
+                    .map(|(&out, &target)| (out - target).powi(2))
+                    .sum::<f64>() / outs.len() as f64;
                 total_test_loss += test_loss;
+                
+                // compute accuracy for either binary or regression by looping through outputs
+                let test_accuracy = outs.iter().zip(yi.iter())
+                    .map(|(&out, &target)| accuracy_mlp(out, target))
+                    .sum::<f64>() / outs.len() as f64;
+                total_test_accuracy += test_accuracy;
 
-                if self.is_classification {
-                    total_test_accuracy += accuracy_mlp(activations[0], yi);
-                }
 
             }
             // average loss for this epoch
@@ -278,25 +272,40 @@ impl MLP {
             self.test_losses.push(total_test_loss);
 
             // compute test accuracy
-            if self.is_classification {
-                total_test_accuracy /= x_test.len() as f64;
-                self.test_accuracies.push(total_test_accuracy);
-            }
+            total_test_accuracy /= x_test.len() as f64;
+            self.test_accuracies.push(total_test_accuracy);
         }
-
+        
+        
     }
 }
 
-// Example usage (XOR)
+
 fn main() {
-    // let l1 = Dense::new(2, 2, Activation::Sigmoid);
-    // let l2 = Dense::new(2, 1, Activation::Linear);
-    // let mut mlp = MLP::new(vec![l1, l2], true);
+    // let l1 = Dense::new(2, 2, Activation::Linear);
+    // let l2 = Dense::new(2, 2, Activation::Sigmoid);
+    // let l3 = Dense::new(2, 1, Activation::Sigmoid);
+    // let mut mlp = MLP::new(vec![l1, l2, l3], true);
     // let x = vec![vec![1.0, 0.0], vec![0.0, 1.0], vec![0.0, 0.0], vec![1.0, 1.0]];
-    // let y = vec![1.0,1.0,0.0,0.0];
-    // let train_losses = mlp.train(&x, &y, 100_000, 0.01);
-    // println!("Training losses: {:?}", train_losses);
+    // let y = vec![vec![1.0], vec![1.0], vec![0.0], vec![0.0]]; // Single outputs wrapped in lists
+    // let train_losses = mlp.train(&x, &y, &x, &y, 100_000, 0.01);
+    // // println!("Training losses: {:?}", train_losses);
     // for x in x.iter() {
     //     println!("Prediction for {:?}: {:?}", x, mlp.predict(x));
     // }
+
+    let l1 = Dense::new(2, 2, Activation::Linear);
+    let l2 = Dense::new(2, 3, Activation::Sigmoid);
+    let mut mlp = MLP::new(vec![l1, l2], true);
+    let x = vec![vec![-1.0, -1.0], vec![1.0, -1.0], vec![0.0, 1.0]];
+    let y = vec![
+        vec![1.0, 0.0, 0.0],
+        vec![0.0, 1.0, 0.0],
+        vec![0.0, 0.0, 1.0]
+    ];
+    let _train_losses = mlp.train(&x, &y, &x, &y, 100_000, 0.01);
+    // println!("Training losses: {:?}", train_losses);
+    for x_sample in x.iter() {
+        println!("Prediction for {:?}: {:?}", x_sample, mlp.predict(x_sample));
+    }
 }
