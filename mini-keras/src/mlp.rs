@@ -166,7 +166,11 @@ impl MLP {
     pub fn new(layers: Vec<Dense>, is_classification: bool) -> Self {
         // For multi-output classification, don't automatically add single-output layer
         // Only add single-output layer if explicitly needed for binary classification
-        MLP { layers, is_classification }
+        MLP { layers, is_classification, 
+            train_losses: Vec::new(),
+            test_losses: Vec::new(),
+            train_accuracies: Vec::new(),
+            test_accuracies: Vec::new() }
     }
 
     /// Predict outputs for a single input sample
@@ -211,7 +215,7 @@ impl MLP {
                 }
 
                 // accumulate loss
-                train_loss: f64 = outs.iter().zip(yi.iter())
+                let train_loss: f64 = outs.iter().zip(yi.iter())
                     .map(|(&out, &target)| (out - target).powi(2))
                     .sum::<f64>() / outs.len() as f64;
                 total_train_loss += train_loss;
