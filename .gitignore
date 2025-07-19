@@ -15,6 +15,7 @@
 .idea/**/shelf
 
 .venv/
+venv/
 
 # AWS User-specific
 .idea/**/aws.xml
