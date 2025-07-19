@@ -3,7 +3,7 @@ use rand::seq::SliceRandom;
 use crate::utils::{distance};
 
 /// K-means clustering
-#[derive( Debug, Clone)]
+#[derive( Serialize, Deserialize, Debug, Clone)]
 pub struct KMeans {
     pub k: usize,
     pub max_iters: usize,
