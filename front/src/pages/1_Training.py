@@ -36,7 +36,7 @@ with st.sidebar:
 
     with st.expander("1. Data Settings", expanded=True):
         max_samples = st.number_input(
-            "Samples per class", min_value=2, max_value=10000, value=90, step=1, disabled=is_training
+            "Samples per class", min_value=2, max_value=9765, value=90, step=1, disabled=is_training
         )
         img_w = st.number_input(
             "Image width", min_value=16, max_value=1024, value=32, step=1, disabled=is_training
@@ -61,10 +61,11 @@ with st.sidebar:
                 {
                     "learning_rate": st.number_input(
                         "Learning Rate",
-                        min_value=1e-4,
+                        min_value=1e-8,
                         max_value=1.0,
                         value=0.01,
                         disabled=is_training,
+
                     ),
                     "max_iterations": st.number_input(
                         "Max Iterations",
@@ -100,7 +101,7 @@ with st.sidebar:
         elif model_type == "mlp":
             learning_rate = st.number_input(
                 "Learning Rate",
-                min_value=1e-4,
+                min_value=1e-10,
                 max_value=1.0,
                 value=0.01,
                 disabled=is_training,

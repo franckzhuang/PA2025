@@ -40,10 +40,10 @@ def run_training_job(trainer_class, config, collection, job_id):
 
 
 def cleanup_old_model_params(collection):
-    one_hour_ago = datetime.now(timezone.utc) - timedelta(hours=1)
+    one_day_ago = datetime.now(timezone.utc) - timedelta(days=1)
 
     query = {
-        "created_at": {"$lt": one_hour_ago},
+        "created_at": {"$lt": one_day_ago},
         "params_file": {"$exists": True},
         "model_saved": {"$ne": True}
     }
