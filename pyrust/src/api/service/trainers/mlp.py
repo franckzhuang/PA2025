@@ -1,4 +1,6 @@
 import mini_keras as mk
+import numpy as np
+
 from pyrust.src.api.service.trainers.base import BaseTrainer
 
 
@@ -12,6 +14,8 @@ class MLPTrainer(BaseTrainer):
                 "layers": config.get("hidden_layer_sizes", [2, 2]),
                 "activations": config.get("activations", ["linear"] * 2),
                 "threshold": config.get("threshold", 0.5),
+                "real_label": 1.0,
+                "ai_label": 0.0,
             }
         )
         return experiment_config
@@ -22,6 +26,8 @@ class MLPTrainer(BaseTrainer):
             layers=self.experiment_config["layers"],
             activations=self.experiment_config["activations"],
         )
+        data["y_train"] = np.array(data["y_train"]).reshape(-1, 1).tolist()
+        data["y_test"] = np.array(data["y_test"]).reshape(-1, 1).tolist()
         self.model.fit(
             x_train=data["X_train"],
             y_train=data["y_train"],
@@ -34,20 +40,24 @@ class MLPTrainer(BaseTrainer):
     def _evaluate_model(self, data):
         threshold = self.experiment_config["threshold"]
 
+        y_train_flat = np.ravel(data["y_train"])
+        y_test_flat = np.ravel(data["y_test"])
+        print(f"y_train_flat: {y_train_flat}, y_test_flat: {y_test_flat}")
+
         train_preds = [
-            (-1 if self.model.predict(x)[0] < threshold else 1) for x in data["X_train"]
+            (0 if self.model.predict(x)[0] < threshold else 1) for x in data["X_train"]
         ]
-        train_correct = sum(int(a == b) for a, b in zip(data["y_train"], train_preds))
+        train_correct = sum(int(a == b) for a, b in zip(y_train_flat, train_preds))
         train_accuracy = (
-            (train_correct / len(data["y_train"]) * 100) if data["y_train"] else 0
+            (train_correct / len(y_train_flat) * 100) if y_train_flat.size > 0 else 0
         )
 
         test_preds = [
-            (-1 if self.model.predict(x)[0] < threshold else 1) for x in data["X_test"]
+            (0 if self.model.predict(x)[0] < threshold else 1) for x in data["X_test"]
         ]
-        test_correct = sum(int(a == b) for a, b in zip(data["y_test"], test_preds))
+        test_correct = sum(int(a == b) for a, b in zip(y_test_flat, test_preds))
         test_accuracy = (
-            (test_correct / len(data["y_test"]) * 100) if data["y_test"] else 0
+            (test_correct / len(y_test_flat) * 100) if y_test_flat.size > 0 else 0
         )
 
         return {

@@ -17,6 +17,8 @@ class SVMTrainer(BaseTrainer):
                 "kernel": kernel,
                 "gamma": gamma,
                 "threshold": threshold,
+                "real_label": 1.0,
+                "ai_label": -1.0,
             }
         )
 

@@ -65,8 +65,8 @@ class DataLoader:
         target_size = tuple(config.get("image_size", ()))
         max_per_class = config.get("max_images_per_class", 0)
         sources = [
-            {"path": config["real_images_path"], "label": 1.0, "key": "real"},
-            {"path": config["ai_images_path"], "label": -1.0, "key": "ai"},
+            {"path": config["real_images_path"], "label": config["real_label"], "key": "real"},
+            {"path": config["ai_images_path"], "label": config["ai_label"], "key": "ai"},
         ]
 
         data_by_class = {"real": [], "ai": []}
@@ -147,8 +147,8 @@ class DataLoader:
         mongodb = MongoDB()
         coll = mongodb.db["images"]
         sources = [
-            {"label_val": "real", "label": 1.0, "key": "real"},
-            {"label_val": "ai", "label": -1.0, "key": "ai"},
+            {"label_val": "real", "label": config["real_label"], "key": "real"},
+            {"label_val": "ai", "label": config["ai_label"], "key": "ai"},
         ]
         logger.info("Sources for MongoDB: %s", sources)
         for source in sources:
