@@ -87,6 +87,7 @@ class BaseTrainer(ABC):
             y_test = data["y_test"]["real"] + data["y_test"]["ai"]
 
             x_train, y_train = shuffle(x_train, y_train, random_state=42)
+
             x_test, y_test = shuffle(x_test, y_test, random_state=42)
 
             data["X_train"] = x_train
@@ -210,6 +211,8 @@ class BaseTrainer(ABC):
             "ai_images_path",
             "image_size",
             "max_images_per_class",
+            "real_label",
+            "ai_label",
         ]
         for key in image_keys:
             savable_config["hyperparameters"].pop(key, None)

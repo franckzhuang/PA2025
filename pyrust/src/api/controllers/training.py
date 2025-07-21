@@ -255,7 +255,7 @@ def import_model(
                     f.write(str(raw_params))
             log_with_job_id(logger, job_id, f"Model parameters saved to {params_file}")
         except Exception as e:
-            log_with_job_id(logger, job_id, f"Failed to save model params to file: {e}", level=logging.ERROR)
+            log_with_job_id(logger, job_id, f"Failed to save model params to file: {e}")
             params_file = None
 
     def extract_prefix(prefix: str) -> dict:

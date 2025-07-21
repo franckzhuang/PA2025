@@ -5,7 +5,8 @@ import json
 from dotenv import load_dotenv
 import plotly.express as px
 
-from utils import ApiClient
+from utils import ApiClient, format_duration
+
 
 client = ApiClient()
 
@@ -51,6 +52,7 @@ try:
             "model_type": "Model",
             "status": "Status",
             "metrics.test_accuracy": "Test Accuracy (%)",
+            "model_saved": "Model Saved",
             "job_id": "Job ID",
         }
 
@@ -96,6 +98,7 @@ try:
                             job_details_row["params_file"]
                         ):
                             try:
+
                                 params_content = client.get_params_for_job(
                                     selected_job_id
                                 )
@@ -109,16 +112,18 @@ try:
                                 date_str = pd.to_datetime(
                                     job_dict_cleaned.get("created_at")
                                 ).strftime("%Y%m%d_%H%M%S")
-                                file_name = f"{date_str}_{model_type}_export.json"
-                                st.info("You can export the model parameters and job details as file.")
-                                st.download_button(
-                                    label="📥 Download Model Export",
-                                    data=json.dumps(
-                                        export_data, indent=2, default=str
-                                    ).encode("utf-8"),
-                                    file_name=file_name,
-                                    mime="application/json",
+                                export_filename = st.text_input(
+                                    "Enter a name to save the model and job parameters as JSON file.",
                                 )
+                                if export_filename:
+                                    st.download_button(
+                                        label="📥 Download Model Export",
+                                        data=json.dumps(
+                                            export_data, indent=2, default=str
+                                        ).encode("utf-8"),
+                                        file_name=export_filename + ".json",
+                                        mime="application/json",
+                                    )
                             except Exception as e:
                                 st.error(f"Download failed: {e}")
                         else:
@@ -159,19 +164,12 @@ try:
                                         st.error(f"Failed to save model: {e}")
 
                     st.divider()
-                    with st.expander("⚙️ Configuration"):
-                        config_data = {
-                            k.replace("config.", ""): v
-                            for k, v in job_dict_cleaned.items()
-                            if "config." in k
-                        }
-                        st.json(config_data)
 
                     with st.expander("📈 Metrics", expanded=True):
                         metrics = {
                             k.replace("metrics.", ""): v
                             for k, v in job_details_row.to_dict().items()
-                            if "metrics." in k and pd.notna(v)
+                            if "metrics." in k
                         }
                         if not metrics:
                             st.write("No metrics available for this run.")
@@ -187,9 +185,11 @@ try:
                             )
                             m_col3.metric(
                                 "⏱️ Training duration",
-                                f"{metrics.get('training_duration', 0):.2f}s",
+                                format_duration(metrics.get('training_duration', 0)),
                             )
                             st.divider()
+
+                            st.subheader("📂 Data Distribution")
                             col_pie1, col_pie2 = st.columns(2)
                             with col_pie1:
                                 df_counts = pd.DataFrame({
@@ -198,6 +198,7 @@ try:
                                 })
                                 fig1 = px.pie(df_counts, names='type', values='count',
                                               title='📊 Image Source Distribution')
+                                fig1.update_traces(textinfo='value+label')
                                 st.plotly_chart(fig1, use_container_width=True)
 
                             with col_pie2:
@@ -207,12 +208,14 @@ try:
                                 })
                                 fig2 = px.pie(df_samples, names='type', values='count',
                                               title='📚 Data Split Distribution')
+                                fig2.update_traces(textinfo='value+label')
                                 st.plotly_chart(fig2, use_container_width=True)
 
                             if "train_losses" in metrics and isinstance(
                                 metrics.get("train_losses"), list
                             ):
                                 st.divider()
+                                st.subheader("📉 Training Evolution per Epoch")
                                 loss_col, acc_col = st.columns(2)
                                 with loss_col:
                                     df_losses = pd.DataFrame(
@@ -222,18 +225,61 @@ try:
                                         }
                                     )
                                     st.line_chart(df_losses)
+                                    st.caption("Loss Evolution (Train vs Test)")
                                 with acc_col:
                                     df_accuracies = pd.DataFrame(
                                         {
-                                            "Train Accuracy": metrics[
-                                                "train_accuracies"
-                                            ],
-                                            "Test Accuracy": metrics.get(
-                                                "test_accuracies", []
-                                            ),
+                                            "Train Accuracy": metrics["train_accuracies"],
+                                            "Test Accuracy": metrics.get("test_accuracies", []),
                                         }
                                     )
                                     st.line_chart(df_accuracies)
+                                    st.caption("Accuracy Evolution (Train vs Test)")
 
+                    with st.expander("⚙️ Hyperparameters"):
+
+                        hyperparameters_data = {}
+                        if 'image_config.image_size' in job_dict_cleaned:
+                            hyperparameters_data['image_size'] = job_dict_cleaned['image_config.image_size']
+
+                        for key, value in job_dict_cleaned.items():
+                            if key.startswith('hyperparameters.'):
+                                param_name = key.replace('hyperparameters.', '')
+                                hyperparameters_data[param_name] = value
+
+                        if not hyperparameters_data:
+                            st.info("No hyperparameters found.")
+                        else:
+
+                            display_data = {k: str(v) for k, v in hyperparameters_data.items()}
+                            df_params = pd.DataFrame(display_data.items(), columns=["Parameter", "Value"])
+                            st.table(df_params)
+
+                    with st.expander("🖼️ Images Used"):
+                        col_train, col_test = st.columns(2)
+
+                        with col_train:
+                            st.write("**Training Images**")
+                            train_real = job_dict_cleaned.get('image_config.training_images.real')
+                            train_ai = job_dict_cleaned.get('image_config.training_images.ai')
+
+                            if train_real:
+                                st.write(f"_Real ({len(train_real)}):_")
+                                st.dataframe(train_real, height=150, use_container_width=True)
+                            if train_ai:
+                                st.write(f"_AI ({len(train_ai)}):_")
+                                st.dataframe(train_ai, height=150, use_container_width=True)
+
+                        with col_test:
+                            st.write("**Test Images**")
+                            test_real = job_dict_cleaned.get('image_config.test_images.real')
+                            test_ai = job_dict_cleaned.get('image_config.test_images.ai')
+
+                            if test_real:
+                                st.write(f"_Real ({len(test_real)}):_")
+                                st.dataframe(test_real, height=150, use_container_width=True)
+                            if test_ai:
+                                st.write(f"_AI ({len(test_ai)}):_")
+                                st.dataframe(test_ai, height=150, use_container_width=True)
 except Exception as e:
     st.error(f"An unexpected error occurred: {e}")

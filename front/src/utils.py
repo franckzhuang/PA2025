@@ -9,7 +9,7 @@ API_URL = os.environ.get("API_URL", "http://localhost:8000")
 class ApiClient:
     """Client pour interagir avec l'API d'entraînement."""
 
-    def __init__(self, base_url=API_URL, timeout=60, max_retries=3):
+    def __init__(self, base_url=API_URL, timeout=30, max_retries=3):
         self.base_url = base_url.rstrip("/")
         self.session = requests.Session()
         self.timeout = timeout
@@ -68,7 +68,6 @@ class ApiClient:
         return resp.json()
 
     def get_model_details(self, model_name: str):
-
         res = requests.get(f"{self.base_url}/models/details/{model_name}")
         if res.status_code == 200:
             model_json = res.json()
@@ -89,3 +88,21 @@ class ApiClient:
         resp.raise_for_status()
         return resp.json()
 
+
+def format_duration(seconds: float) -> str:
+    if seconds < 0:
+        return "0s"
+
+    if seconds < 1:
+        return f"{int(seconds * 1000)}ms"
+
+    total_seconds = int(seconds)
+    hours, remainder = divmod(total_seconds, 3600)
+    minutes, seconds = divmod(remainder, 60)
+
+    if hours > 0:
+        return f"{hours}h {minutes}m {seconds}s"
+    elif minutes > 0:
+        return f"{minutes}m {seconds}s"
+    else:
+        return f"{seconds}s"
