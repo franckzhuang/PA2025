@@ -4,8 +4,8 @@ import pandas as pd
 import json
 from dotenv import load_dotenv
 import plotly.express as px
-
 from utils import ApiClient, format_duration
+
 
 
 client = ApiClient()
@@ -92,7 +92,6 @@ try:
 
                     st.subheader("Actions")
                     action_cols = st.columns(2)
-
                     with action_cols[0]:
                         if "params_file" in job_details_row and pd.notna(
                             job_details_row["params_file"]
@@ -124,6 +123,7 @@ try:
                                         file_name=export_filename + ".json",
                                         mime="application/json",
                                     )
+
                             except Exception as e:
                                 st.error(f"Download failed: {e}")
                         else:
@@ -237,7 +237,6 @@ try:
                                     st.caption("Accuracy Evolution (Train vs Test)")
 
                     with st.expander("⚙️ Hyperparameters"):
-
                         hyperparameters_data = {}
                         if 'image_config.image_size' in job_dict_cleaned:
                             hyperparameters_data['image_size'] = job_dict_cleaned['image_config.image_size']
