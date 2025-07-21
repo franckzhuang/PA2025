@@ -70,18 +70,6 @@ class PyObjectId(ObjectId):
     def __get_pydantic_json_schema__(cls, core_schema, handler):
         return {"type": "string"}
 
-
-class Metrics(BaseModel):
-    train_accuracy: float
-    test_accuracy: float
-    train_samples: int
-    test_samples: int
-    len_real_images: int
-    len_ai_images: int
-    total_images: int
-    training_duration: float | None = None
-
-
 class TrainingJob(BaseModel):
     id: PyObjectId = Field(alias="_id")
     job_id: str
@@ -89,7 +77,8 @@ class TrainingJob(BaseModel):
     status: str
     image_config: Dict[str, Any]
     hyperparameters: Dict[str, Any]
-    metrics: Metrics = None
+    model_saved: bool
+    metrics: Dict[str, Any] = None
     created_at: datetime
     started_at: datetime = None
     finished_at: datetime = None

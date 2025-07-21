@@ -7,7 +7,7 @@ import streamlit as st
 import pandas as pd
 from dotenv import load_dotenv
 import plotly.express as px
-from utils import ApiClient
+from utils import ApiClient, format_duration
 
 client = ApiClient()
 
@@ -62,15 +62,14 @@ with st.sidebar:
                     "learning_rate": st.number_input(
                         "Learning Rate",
                         min_value=1e-8,
-                        max_value=1.0,
                         value=0.01,
                         disabled=is_training,
+                        format="%.4f",
 
                     ),
                     "max_iterations": st.number_input(
                         "Max Iterations",
                         min_value=1,
-                        max_value=100000,
                         value=1000,
                         step=1,
                         disabled=is_training,
@@ -83,7 +82,6 @@ with st.sidebar:
                     "C": st.number_input(
                         "Regularization (C)",
                         min_value=0.01,
-                        max_value=100.0,
                         value=1.0,
                         disabled=is_training,
                     ),
@@ -93,10 +91,10 @@ with st.sidebar:
             if params["kernel"] == "rbf":
                 params["gamma"] = st.number_input(
                     "Gamma (RBF)",
-                    min_value=1e-4,
-                    max_value=1.0,
-                    value=0.01,
+                    min_value=1e-10,
+                    value=0.001,
                     disabled=is_training,
+                    format="%.5f",
                 )
         elif model_type == "mlp":
             learning_rate = st.number_input(
@@ -105,6 +103,7 @@ with st.sidebar:
                 max_value=1.0,
                 value=0.01,
                 disabled=is_training,
+                format="%.5f",
             )
             epochs = st.number_input(
                 "Epochs", min_value=1, max_value=10000, value=10, step=1
@@ -114,7 +113,7 @@ with st.sidebar:
 
             st.write("**Layer Configuration**")
 
-            num_layers = st.number_input("Number of hidden layers", min_value=1, max_value=10, value=3)
+            num_layers = st.number_input("Number of hidden layers", min_value=1, value=3)
 
             hidden_layer_sizes = []
             activations = []
@@ -130,6 +129,7 @@ with st.sidebar:
                         value=32 if i < num_layers - 1 else 1,
                         key=f"layer_size_{i}",
                         disabled=is_training,
+                        step=1,
                     )
                     hidden_layer_sizes.append(size)
 
@@ -158,10 +158,10 @@ with st.sidebar:
 
             gamma = st.number_input(
                 "Gamma",
-                min_value=1e-4,
-                max_value=10.0,
-                value=0.1,
+                min_value=1e-10,
+                value=0.01,
                 disabled=is_training,
+                format="%.5f",
             )
 
             rbf_params = {
@@ -174,7 +174,6 @@ with st.sidebar:
                 k = st.number_input(
                     "K (Number of Centers)",
                     min_value=2,
-                    max_value=100,
                     value=10,
                     step=1,
                     disabled=is_training,
@@ -182,7 +181,6 @@ with st.sidebar:
                 max_iterations = st.number_input(
                     "Max Iterations",
                     min_value=1,
-                    max_value=10000,
                     value=300,
                     step=1,
                     disabled=is_training,
@@ -240,7 +238,6 @@ if start_btn:
 
     try:
         st.session_state.last_run_results = None
-
         st.session_state.job_id = client.start_training(model_type, payload)
         st.session_state.active_polling = True
         st.session_state.blind_progress = 0
@@ -250,16 +247,19 @@ if start_btn:
         st.error(f"Failed to start training: {e}")
 
 if st.session_state.active_polling and st.session_state.job_id:
+    status_placeholder = st.empty()
     with st.spinner("🔄 Training in progress…"):
         while True:
             try:
                 resp = client.get_status(st.session_state.job_id)
                 status = resp.get("status")
-                st.info(f"Status: {status}")
+                with status_placeholder.container():
+                    st.info(f"Status: {status}")
 
                 if status in ["SUCCESS", "FAILURE"]:
                     st.session_state.active_polling = False
                     st.session_state.last_run_results = resp
+                    st.session_state.celebration_done = False
                     st.rerun()
 
                 time.sleep(2)
@@ -279,8 +279,10 @@ if st.session_state.last_run_results:
     status = results.get("status")
 
     if status == "SUCCESS":
-        st.success("✅ Training completed successfully!")
-        st.balloons()
+        if not st.session_state.celebration_done:
+            st.success("✅ Training completed successfully!")
+            st.balloons()
+            st.session_state.celebration_done = True
 
         metrics = results.get("metrics", {})
         if not metrics:
@@ -295,6 +297,7 @@ if st.session_state.last_run_results:
                     'count': [metrics.get('len_real_images', 0), metrics.get('len_ai_images', 0)]
                 })
                 fig1 = px.pie(df_counts, names='type', values='count', title='📊 Image Source Distribution')
+                fig1.update_traces(textinfo='value+label')
                 st.plotly_chart(fig1, use_container_width=True)
 
             with col_pie2:
@@ -303,6 +306,7 @@ if st.session_state.last_run_results:
                     'count': [metrics.get('train_samples', 0), metrics.get('test_samples', 0)]
                 })
                 fig2 = px.pie(df_samples, names='type', values='count', title='📚 Data Split Distribution')
+                fig2.update_traces(textinfo='value+label')
                 st.plotly_chart(fig2, use_container_width=True)
 
             st.divider()
@@ -311,7 +315,7 @@ if st.session_state.last_run_results:
             col1, col2, col3 = st.columns(3)
             col1.metric("🎯 Train Accuracy", f"{metrics.get('train_accuracy', 0):.2f}%")
             col2.metric("🧪 Test Accuracy", f"{metrics.get('test_accuracy', 0):.2f}%")
-            col3.metric("⏱️ Training duration", f"{metrics.get('training_duration', 0):.2f}s")
+            col3.metric("⏱️ Training duration", format_duration(metrics.get('training_duration', 0)))
 
             if 'train_losses' in metrics and 'train_accuracies' in metrics:
                 st.divider()

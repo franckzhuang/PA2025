@@ -1,7 +1,9 @@
+import pandas as pd
 import streamlit as st
 import numpy as np
 from PIL import Image
-from utils import ApiClient
+from utils import ApiClient, format_duration
+import plotly.express as px
 
 client = ApiClient()
 
@@ -36,30 +38,122 @@ with st.sidebar:
 
     detect_btn = st.button("🚀 Run Detection")
 
+
 @st.dialog("Model Details", width="large")
 def show_model_details():
     with st.spinner("Fetching model details..."):
         try:
             details, params = client.get_model_details(model_name)
 
-            st.write("## General Information")
-            st.write(f"**Model Name:** {details.get('model_name')}")
-            st.write(f"**Model Type:** {details.get('model_type')}")
-            st.write(f"**Created At:** {details.get('created_at')}")
+            job_details = details.get("job", {})
+            hyperparameters = job_details.get("hyperparameters", {})
+            image_config = job_details.get("image_config", {})
+            metrics = job_details.get("metrics", {})
 
+            st.write(f"### {details.get('model_name')} ({details.get('model_type')})")
+            st.caption(f"Job ID: {job_details.get('job_id')}")
             st.divider()
 
-            st.write("## Hyperparameters")
-            st.json(details.get("job", {}).get("hyperparameters"))
+            with st.expander("📈 Metrics", expanded=True):
+                if not metrics:
+                    st.write("No metrics available for this run.")
+                else:
+                    # Métriques finales
+                    m_col1, m_col2, m_col3 = st.columns(3)
+                    m_col1.metric("Train Accuracy", f"{metrics.get('train_accuracy', 0):.2f}%")
+                    m_col2.metric("Test Accuracy", f"{metrics.get('test_accuracy', 0):.2f}%")
+                    m_col3.metric("Duration", format_duration(metrics.get('training_duration', 0)))
 
-            st.write("## Image Configuration")
-            st.json(details.get("job", {}).get("image_config"))
+                    st.divider()
 
-            st.write("## Metrics")
-            st.json(details.get("job", {}).get("metrics"))
+                    pie_col1, pie_col2 = st.columns(2)
+                    with pie_col1:
+                        df_counts = pd.DataFrame({
+                            'type': ['Real', 'AI'],
+                            'count': [metrics.get('len_real_images', 0), metrics.get('len_ai_images', 0)]
+                        })
+                        fig1 = px.pie(df_counts, names='type', values='count',
+                                      title='📊 Image Source Distribution')
+                        fig1.update_traces(textinfo='value+label')
+                        st.plotly_chart(fig1, use_container_width=True)
 
-            st.write("## Model Parameters")
-            st.json(params)
+                    with pie_col2:
+                        df_samples = pd.DataFrame({
+                            'type': ['Train', 'Test'],
+                            'count': [metrics.get('train_samples', 0), metrics.get('test_samples', 0)]
+                        })
+                        fig2 = px.pie(df_samples, names='type', values='count',
+                                      title='📚 Data Split Distribution')
+                        fig2.update_traces(textinfo='value+label')
+                        st.plotly_chart(fig2, use_container_width=True)
+
+                    if 'train_losses' in metrics and isinstance(metrics.get('train_losses'), list):
+                        st.divider()
+                        loss_col, acc_col = st.columns(2)
+                        with loss_col:
+                            df_losses = pd.DataFrame(
+                                {
+                                    "Train Loss": metrics["train_losses"],
+                                    "Test Loss": metrics.get("test_losses", []),
+                                }
+                            )
+                            st.line_chart(df_losses)
+                            st.caption("Loss Evolution (Train vs Test)")
+                        with acc_col:
+                            df_accuracies = pd.DataFrame(
+                                {
+                                    "Train Accuracy": metrics["train_accuracies"],
+                                    "Test Accuracy": metrics.get("test_accuracies", []),
+                                }
+                            )
+                            st.line_chart(df_accuracies)
+                            st.caption("Accuracy Evolution (Train vs Test)")
+
+            with st.expander("⚙️ Hyperparameters"):
+                display_params = {}
+                if image_config.get('image_size'):
+                    display_params['image_size'] = image_config['image_size']
+                if image_config.get('images_per_class'):
+                    display_params['images_per_class'] = image_config['images_per_class']
+
+                display_params.update(hyperparameters)
+
+                if not display_params:
+                    st.info("No hyperparameters found.")
+                else:
+                    display_data = {k: str(v) for k, v in display_params.items()}
+                    df_params = pd.DataFrame(display_data.items(), columns=["Parameter", "Value"])
+                    st.table(df_params)
+
+            with st.expander("🖼️ Images Used"):
+                col_train, col_test = st.columns(2)
+                training_images = image_config.get('training_images', {})
+                test_images = image_config.get('test_images', {})
+
+                with col_train:
+                    st.write("**Training Images**")
+                    train_real = training_images.get('real')
+                    train_ai = training_images.get('ai')
+                    if train_real:
+                        st.write(f"_Real ({len(train_real)}):_")
+                        st.dataframe(train_real, height=150, use_container_width=True)
+                    if train_ai:
+                        st.write(f"_AI ({len(train_ai)}):_")
+                        st.dataframe(train_ai, height=150, use_container_width=True)
+
+                with col_test:
+                    st.write("**Test Images**")
+                    test_real = test_images.get('real')
+                    test_ai = test_images.get('ai')
+                    if test_real:
+                        st.write(f"_Real ({len(test_real)}):_")
+                        st.dataframe(test_real, height=150, use_container_width=True)
+                    if test_ai:
+                        st.write(f"_AI ({len(test_ai)}):_")
+                        st.dataframe(test_ai, height=150, use_container_width=True)
+
+            with st.expander("🧮 Model Parameters (Raw)"):
+                st.json(params)
 
         except Exception as e:
             st.error(f"Error fetching model details: {e}")
