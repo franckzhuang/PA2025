@@ -121,7 +121,7 @@ try:
                                         data=json.dumps(
                                             export_data, indent=2, default=str
                                         ).encode("utf-8"),
-                                        file_name=export_filename,
+                                        file_name=export_filename + ".json",
                                         mime="application/json",
                                     )
                             except Exception as e:

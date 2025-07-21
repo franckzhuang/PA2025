@@ -346,8 +346,10 @@ if st.session_state.last_run_results:
                     export_data = {
                         "model_type": results.get("model_type"),
                         "params": params_content,
-                        "job": results,
+                        "job_details": results,
                     }
+
+
                     dt = datetime.now().strftime("%Y%m%d_%H%M%S")
                     fname = f"{dt}_{results.get('model_type', 'model')}_export.json"
                     st.info(
