@@ -14,10 +14,14 @@ class RBFTrainer(BaseTrainer):
                 "k": k,
                 "max_iterations": max_iterations,
                 "gamma": gamma,
+                "real_label": 1.0,
+                "ai_label": 0.0,
             })
         else:
             experiment_config.update({
                 "gamma": gamma,
+                "real_label": 1.0,
+                "ai_label": 0.0,
             })
 
         return experiment_config

@@ -40,49 +40,50 @@ def run_training_job(trainer_class, config, collection, job_id):
 
 
 def cleanup_old_model_params(collection):
-    one_day_ago = datetime.now(timezone.utc) - timedelta(days=1)
-
-    query = {
-        "created_at": {"$lt": one_day_ago},
-        "params_file": {"$exists": True},
-        "model_saved": {"$ne": True}
-    }
-    docs_to_cleanup = list(collection.find(query))
-
-    if not docs_to_cleanup:
-        return
-
-    ids_to_update = []
-    base_path = Path(__file__).parent.parent.parent / "training_models"
-    if not base_path.exists():
-        logger.warning(f"Cleanup: Base path {base_path} does not exist. Skipping cleanup.")
-        return
-
-    for doc in docs_to_cleanup:
-        path_str = doc.get("params_file")
-        if not path_str:
-            continue
-        path_str = str(base_path/ path_str)
-
-
-        try:
-            if os.path.exists(path_str):
-                os.remove(path_str)
-                logger.info(f"Cleanup: Deleted old model file at {path_str}")
-            else:
-                logger.warning(f"Cleanup: File not found at {path_str}, but path exists in DB.")
-
-            ids_to_update.append(doc['_id'])
-
-        except Exception as e:
-            logger.error(f"Cleanup: Failed to delete file {path_str}. Error: {e}")
-
-    if ids_to_update:
-        collection.update_many(
-            {"_id": {"$in": ids_to_update}},
-            {"$unset": {"params_file": ""}}
-        )
-        logger.info(f"Cleanup: Removed params_file from {len(ids_to_update)} old jobs.")
+    return
+    # one_day_ago = datetime.now(timezone.utc) - timedelta(days=1)
+    #
+    # query = {
+    #     "created_at": {"$lt": one_day_ago},
+    #     "params_file": {"$exists": True},
+    #     "model_saved": {"$ne": True}
+    # }
+    # docs_to_cleanup = list(collection.find(query))
+    #
+    # if not docs_to_cleanup:
+    #     return
+    #
+    # ids_to_update = []
+    # base_path = Path(__file__).parent.parent.parent / "training_models"
+    # if not base_path.exists():
+    #     logger.warning(f"Cleanup: Base path {base_path} does not exist. Skipping cleanup.")
+    #     return
+    #
+    # for doc in docs_to_cleanup:
+    #     path_str = doc.get("params_file")
+    #     if not path_str:
+    #         continue
+    #     path_str = str(base_path/ path_str)
+    #
+    #
+    #     try:
+    #         if os.path.exists(path_str):
+    #             os.remove(path_str)
+    #             logger.info(f"Cleanup: Deleted old model file at {path_str}")
+    #         else:
+    #             logger.warning(f"Cleanup: File not found at {path_str}, but path exists in DB.")
+    #
+    #         ids_to_update.append(doc['_id'])
+    #
+    #     except Exception as e:
+    #         logger.error(f"Cleanup: Failed to delete file {path_str}. Error: {e}")
+    #
+    # if ids_to_update:
+    #     collection.update_many(
+    #         {"_id": {"$in": ids_to_update}},
+    #         {"$unset": {"params_file": ""}}
+    #     )
+    #     logger.info(f"Cleanup: Removed params_file from {len(ids_to_update)} old jobs.")
 
 
 @router.post("/train/linear_classification", status_code=202)

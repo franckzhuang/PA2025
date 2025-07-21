@@ -11,6 +11,8 @@ class LinearClassificationTrainer(BaseTrainer):
                 "verbose": config.get("verbose", True),
                 "learning_rate": config.get("learning_rate", 0.01),
                 "max_iterations": config.get("max_iterations", 1000),
+                "real_label": 1.0,
+                "ai_label": -1.0,
             }
         )
         return experiment_config
