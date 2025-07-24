@@ -42,7 +42,6 @@ class MLPTrainer(BaseTrainer):
 
         y_train_flat = np.ravel(data["y_train"])
         y_test_flat = np.ravel(data["y_test"])
-        print(f"y_train_flat: {y_train_flat}, y_test_flat: {y_test_flat}")
 
         train_preds = [
             (0 if self.model.predict(x)[0] < threshold else 1) for x in data["X_train"]

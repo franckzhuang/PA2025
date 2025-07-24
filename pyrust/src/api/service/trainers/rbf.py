@@ -16,12 +16,14 @@ class RBFTrainer(BaseTrainer):
                 "gamma": gamma,
                 "real_label": 1.0,
                 "ai_label": 0.0,
+                "threshold": config.get("threshold", 0.51),
             })
         else:
             experiment_config.update({
                 "gamma": gamma,
                 "real_label": 1.0,
                 "ai_label": 0.0,
+                "threshold": config.get("threshold", 0.51),
             })
 
         return experiment_config
@@ -45,20 +47,22 @@ class RBFTrainer(BaseTrainer):
             )
 
     def _evaluate_model(self, data):
+        threshold = self.experiment_config["threshold"]
+
+
         train_preds = [
-            (-1 if self.model.predict(x) == 0.0 else 1) for x in data["X_train"]
+            (0 if self.model.predict(x) < threshold else 1) for x in data["X_train"]
         ]
         train_correct = sum(int(a == b) for a, b in zip(data["y_train"], train_preds))
-        train_accuracy = (
-            (train_correct / len(data["y_train"]) * 100) if data["y_train"] else 0
-        )
+        train_accuracy = (train_correct / len(data["y_train"]) * 100)
+
+
         test_preds = [
-            (-1 if self.model.predict(x) == 0.0 else 1) for x in data["X_test"]
+            (0 if self.model.predict(x) < threshold else 1) for x in data["X_test"]
         ]
         test_correct = sum(int(a == b) for a, b in zip(data["y_test"], test_preds))
-        test_accuracy = (
-            (test_correct / len(data["y_test"]) * 100) if data["y_test"] else 0
-        )
+        test_accuracy = (test_correct / len(data["y_test"]) * 100)
+
 
         return {
             "train_accuracy": train_accuracy,

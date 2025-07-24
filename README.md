@@ -197,7 +197,7 @@ $ pip install --no-deps -r requirements.txt
 
 $ cd mini-keras
 $ pip install maturin
-$ maturin build
+$ maturin build --release
 # Then install the wheel file generated in the `target/wheels` directory
 ```
 
