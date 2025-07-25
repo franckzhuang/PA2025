@@ -52,6 +52,7 @@ class RBFTrainer(BaseTrainer):
 
         train_preds = [
             (-1 if self.model.predict(x) < threshold else 1) for x in data["X_train"]
+
         ]
         train_correct = sum(int(a == b) for a, b in zip(data["y_train"], train_preds))
         train_accuracy = (train_correct / len(data["y_train"]) * 100)
